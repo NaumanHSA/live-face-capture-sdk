@@ -1,0 +1,33 @@
+{
+    "name": "live-face-capture",
+    "version": "2.0.0",
+    "description": "Face liveness and capture SDK.",
+    "main": "dist/live-face-capture.js",
+    "module": "dist/live-face-capture.js",
+    "browser": "dist/live-face-capture.js",
+    "buildDate": "2024-11-22",
+    "expiryDate": "2025-11-22",
+    
+    "type": "module",
+    "scripts": {
+        "build": "rollup --config",
+        "start": "rollup --config --watch",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "capture",
+        "video",
+        "javascript",
+        "liveness-detection"
+    ],
+    "author": "Nouman Ahsan",
+    "license": "MIT",
+    "repository": "https://ssopdevops.moiface.ae/DefaultCollection/FaceCapture%20SDK/_git/FaceCapture%20SDK",
+    "devDependencies": {},
+    "dependencies": {
+        "buffer": "^6.0.3",
+        "@rollup/plugin-terser": "^0.4.4",
+        "rollup": "^4.27.3",
+        "rollup-plugin-copy": "^3.5.0"
+    }
+}

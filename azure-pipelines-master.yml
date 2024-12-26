@@ -1,0 +1,124 @@
+resources:
+  repositories:
+    - repository: repo1
+      type: git
+      name: FaceCapture SDK
+      ref: master
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  workspace: '($Pipeline.Workspace)'
+
+trigger:
+  - master
+
+pool:
+  name: Devsecops
+
+steps:
+
+# Notification Starting node.js install
+- script: |
+    curl -H "Content-Type: application/json" -d "{\"text\": \"Starting node.js, angular, npm installation: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+  displayName: 'Notify: Starting node.js, angular, npm installation.'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20.17.0'  # Choose Node.js version
+  displayName: 'Install Node.js'
+
+- script: |
+    cd .
+    npm install -f --verbose
+  displayName: 'Npm Install'
+
+# Notification Starting node.js install
+- script: |
+    curl -H "Content-Type: application/json" -d "{\"text\": \"node.js, angular, npm installation completed: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+  displayName: 'Notify: node.js, angular, npm installation completed.'
+
+- script: |
+    cd .
+    npm run build
+  displayName: 'Build Project'
+
+# Notification after build complete
+- script: |
+    curl -H "Content-Type: application/json" -d "{\"text\": \"Build successfully completed: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+  displayName: 'Notify: Build successfully Completed'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: './dist'
+    includeRootFolder: true
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/FaceCapture-SDK-$(Build.BuildId).zip'
+    replaceExistingArchive: false
+    verbose: true
+
+- task: CopyFiles@2
+  inputs:
+    contents: '$(Build.ArtifactStagingDirectory)/FaceCapture-SDK-$(Build.BuildId).zip'  # Adjust path based on the Angular build output
+    targetFolder: '$(Build.ArtifactStagingDirectory)'  # Staging directory for artifacts
+  displayName: 'Copy files to artifact staging directory'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+
+# Notification after publishing solution
+- script: |
+    webhookUrl="$(teamsWebhookUrl)"
+    text="Solution and Artifacts published successfully: FaceCapture SDK-$(Build.SourceBranchName)"
+    payload="{\"text\": \"$text\"}"
+    curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
+  displayName: 'Notify: Solution Published Successfully'
+
+- task: Bash@3
+  displayName: Extract Latest Release Version
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Locate the Release History file
+      RELEASE_FILE="$(Pipeline.Workspace)/s/_ReleaseHistory_LiveFaceCapture_Web.MD"
+      
+      # Extract the first version number in the file (assuming the latest version is listed first)
+      LATEST_VERSION=$(grep -m 1 -oP '(?<=Version \*\*)[0-9]+\.[0-9]+\.[0-9]+' "$RELEASE_FILE")
+
+      # Output the version as a pipeline variable
+      echo "##vso[task.setvariable variable=LatestReleaseVersion]$LATEST_VERSION"
+
+      # Optional debug output
+      echo "Latest Release Version: $LATEST_VERSION"
+
+- task: Docker@2
+  displayName: 'Login to Docker registry'
+  inputs:
+      containerRegistry: 'DevSecOps-docker'  # Use the service connection name you created
+      command: 'login'
+- script: |
+    export DOCKER_HOST=unix:///var/run/docker.sock
+    docker info
+  displayName: Validate Docker Host
+
+- task: Docker@2
+  displayName: 'Build and Push Docker Image for EFR.PTMS.DASHBOARD'
+  inputs:
+    containerRegistry: 'DevSecOps-docker'  # Name of the Docker service connection
+    repository: 'FaceCapture SDK-$(Build.SourceBranchName)'
+    command: 'buildAndPush'
+    Dockerfile: '$(Pipeline.Workspace)/s/Dockerfile'
+    buildContext: '$(Pipeline.Workspace)/s'
+    tags: '$(LatestReleaseVersion)'
+
+# Notification Docker completion
+- script: |
+    webhookUrl="$(teamsWebhookUrl)"
+    text="Docker Image built and pushed successfully(FaceCapture SDK): FaceCapture SDK-$(Build.SourceBranchName)"
+    payload="{\"text\": \"$text\"}"
+    curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
+  displayName: 'Notify: Docker Image built and pushed Successfully'
