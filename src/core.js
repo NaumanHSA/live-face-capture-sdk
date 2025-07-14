@@ -52,23 +52,23 @@ export async function initializeCapture(config_user) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             // link.href = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css";
-            link.href = currentURL.href + "assets/bootstrap.min.css";
+            link.href = currentURL.href + "./assets/bootstrap.min.css";
             document.head.appendChild(link);
 
             // add bootstrap
             const link1 = document.createElement('link');
             link.rel = 'stylesheet';
             // link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css";
-            link.href = currentURL.href + "assets/bootstrap-icons.min.css";
+            link.href = currentURL.href + "./assets/bootstrap-icons.min.css";
             document.head.appendChild(link1);
 
-            const responseCSS = await fetch(currentURL.href + "assets/styles.css");
+            const responseCSS = await fetch(currentURL.href + "./assets/styles.css");
             const styleSheet = await responseCSS.text();
             const style = document.createElement('style');
             style.appendChild(document.createTextNode(styleSheet));
             document.head.appendChild(style);
 
-            const response = await fetch(currentURL.href + "assets/index.html");
+            const response = await fetch(currentURL.href + "./assets/index.html");
             const html = await response.text();
             container.innerHTML = html;
             setupUI(); // Initialize event listeners and functionality
