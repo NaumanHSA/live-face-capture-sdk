@@ -2,7 +2,7 @@ resources:
   repositories:
     - repository: repo1
       type: git
-      name: FaceCapture SDK
+      name: Live-Face-Capture-SDK
       ref: master
 
 variables:
@@ -21,7 +21,7 @@ steps:
 
 # Notification Starting node.js install
 - script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"Starting node.js, angular, npm installation: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+    curl -H "Content-Type: application/json" -d "{\"text\": \"Starting node.js, angular, npm installation: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
   displayName: 'Notify: Starting node.js, angular, npm installation.'
 
 - task: NodeTool@0
@@ -36,7 +36,7 @@ steps:
 
 # Notification Starting node.js install
 - script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"node.js, angular, npm installation completed: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+    curl -H "Content-Type: application/json" -d "{\"text\": \"node.js, angular, npm installation completed: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
   displayName: 'Notify: node.js, angular, npm installation completed.'
 
 - script: |
@@ -46,7 +46,7 @@ steps:
 
 # Notification after build complete
 - script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"Build successfully completed: FaceCapture SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
+    curl -H "Content-Type: application/json" -d "{\"text\": \"Build successfully completed: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
   displayName: 'Notify: Build successfully Completed'
 
 - task: ArchiveFiles@2
@@ -54,13 +54,13 @@ steps:
     rootFolderOrFile: './dist'
     includeRootFolder: true
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/FaceCapture-SDK-$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/Live-Face-Capture-SDK-$(Build.BuildId).zip'
     replaceExistingArchive: false
     verbose: true
 
 - task: CopyFiles@2
   inputs:
-    contents: '$(Build.ArtifactStagingDirectory)/FaceCapture-SDK-$(Build.BuildId).zip'  # Adjust path based on the Angular build output
+    contents: '$(Build.ArtifactStagingDirectory)/Live-Face-Capture-SDK-$(Build.BuildId).zip'  # Adjust path based on the Angular build output
     targetFolder: '$(Build.ArtifactStagingDirectory)'  # Staging directory for artifacts
   displayName: 'Copy files to artifact staging directory'
 
@@ -73,7 +73,7 @@ steps:
 # Notification after publishing solution
 - script: |
     webhookUrl="$(teamsWebhookUrl)"
-    text="Solution and Artifacts published successfully: FaceCapture SDK-$(Build.SourceBranchName)"
+    text="Solution and Artifacts published successfully: Live-Face-Capture-SDK-$(Build.SourceBranchName)"
     payload="{\"text\": \"$text\"}"
     curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
   displayName: 'Notify: Solution Published Successfully'
@@ -109,7 +109,7 @@ steps:
   displayName: 'Build and Push Docker Image for EFR.PTMS.DASHBOARD'
   inputs:
     containerRegistry: 'DevSecOps-docker'  # Name of the Docker service connection
-    repository: 'FaceCapture SDK-$(Build.SourceBranchName)'
+    repository: 'Live-Face-Capture-SDK-$(Build.SourceBranchName)'
     command: 'buildAndPush'
     Dockerfile: '$(Pipeline.Workspace)/s/Dockerfile'
     buildContext: '$(Pipeline.Workspace)/s'
@@ -118,7 +118,7 @@ steps:
 # Notification Docker completion
 - script: |
     webhookUrl="$(teamsWebhookUrl)"
-    text="Docker Image built and pushed successfully(FaceCapture SDK): FaceCapture SDK-$(Build.SourceBranchName)"
+    text="Docker Image built and pushed successfully(Live-Face-Capture-SDK): Live-Face-Capture-SDK-$(Build.SourceBranchName)"
     payload="{\"text\": \"$text\"}"
     curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
   displayName: 'Notify: Docker Image built and pushed Successfully'

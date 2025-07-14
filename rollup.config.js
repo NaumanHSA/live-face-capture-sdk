@@ -17,11 +17,12 @@ export default {
             plugins: [terser()]
         },
     ],
-    // plugins: [
-    //     copy({
-    //         targets: [
-    //             { src: 'src/assets/*', dest: 'dist/assets' }, // Copy all files in assets folder
-    //         ],
-    //     }),
-    // ],
+    plugins: [
+        copy({
+            targets: [
+                { src: 'src/assets/*', dest: 'dist/assets' }, // Copy all files in assets folder
+                { src: 'src/libs/*', dest: 'dist/libs' }, // Copy all files in libs folder
+            ],
+        }),
+    ],
 };

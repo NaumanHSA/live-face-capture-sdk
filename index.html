@@ -103,8 +103,9 @@
     </div>
 
     <script type="module">
-        // import LiveFaceCapture from "./src/index.js";
-        // import {decryptSecretExecutionData} from "./src/encryption.js";
+        import LiveFaceCapture from "./src/index.js";
+        import {decryptSecretExecutionData} from "./src/encryption.js";
+        import "./temp.js";
 
         const key = `
             -----BEGIN PRIVATE KEY-----
@@ -151,8 +152,8 @@
             LiveFaceCapture.open({
                 config: {
                     is_front_camera: false,
-                    camera_id: videoInputs[0].deviceId,
-                    // camera_id: 0,
+                    // camera_id: videoInputs[0].deviceId,
+                    camera_id: 0,
                     allow_multiple_faces: false,
                     max_camera_res: 1920,
                     time_to_blink: 1500,

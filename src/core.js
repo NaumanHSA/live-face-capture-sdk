@@ -18,6 +18,7 @@ import {
 import { generateSecretExecutionData, decryptSecretExecutionData } from "./encryption.js";
 
 
+const currentURL = new URL('.', import.meta.url);
 let videoElement, loadingSreenElement, canvasElement, canvasCtx, close_btn;
 let isFrontCamera;
 let faceLandmarker;
@@ -42,32 +43,33 @@ export async function initializeCapture(config_user) {
 
     // Load external scripts
     const scripts = [
-        "https://bundle.run/numericjs@1.2.6",
+        // "https://bundle.run/numericjs@1.2.6",
+        currentURL.href + "libs/numericjs@1.2.6.js"
     ];
     loadScripts(scripts)
         .then(async () => {
             // add bootstrap
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css";
+            // link.href = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css";
+            link.href = currentURL.href + "assets/bootstrap.min.css";
             document.head.appendChild(link);
 
             // add bootstrap
             const link1 = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css";
+            // link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css";
+            link.href = currentURL.href + "assets/bootstrap-icons.min.css";
             document.head.appendChild(link1);
 
-            const styleSheet = `.root-container{width:100%;height:100%;display:flex;justify-content:center;align-items:center;position:absolute;top:0;left:0;background-color:#000}.btn-close{position:absolute;top:2%;left:90%;background-color:transparent;color:#b68a35;font-size:30px;cursor:pointer;z-index:999;border:none}.camera-view,.canvas,.loading-screen{position:absolute;top:0;left:0;width:100%;height:100%}.app-container{width:100%;max-width:600px;height:100%;background-color:#000;box-shadow:0 0 20px rgba(0,0,0,.5);display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;padding:0}.camera-view,.canvas{object-fit:cover}.camera-view-front{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);-moz-transform:rotateY(180deg)}.loading-screen{background-color:rgba(0,0,0,.9);justify-content:center;align-items:center;flex-direction:column;z-index:1000;display:none}.loading-circle{width:15%;aspect-ratio:1/1;border:5px solid rgba(255,255,255,.3);border-top:5px solid #fff;border-radius:50%;animation:1s linear infinite rotate}@keyframes rotate{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}`
-            // const responseCSS = await fetch("./src/assets/ui.css");
-            // const styleSheet = await responseCSS.text();
+            const responseCSS = await fetch(currentURL.href + "assets/styles.css");
+            const styleSheet = await responseCSS.text();
             const style = document.createElement('style');
             style.appendChild(document.createTextNode(styleSheet));
             document.head.appendChild(style);
 
-            // const response = await fetch("./src/assets/ui.html");
-            // const html = await response.text();
-            const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="app-container" style="background-color:#fff" class="app-container container col-12 col-sm-8 col-md-7 col-lg-6 col-xl-4 d-flex flex-column align-items-center justify-content-between"><div id="loading-screen" class="loading-screen"><div class="loading-circle"></div><div class="mt-2" style="color:#fff">Loading...</div></div><div class="row pt-2 pl-4 pb-2 mb-2 shadow" style="width:100%;height:12%;background-color:#fff;overflow:hidden;z-index:1"><div class="col"><img src="https://home.moi.gov.ae/moi/assets/img/svg-icons/uae-minstry-logo.svg" style="height:100%;object-fit:contain;overflow:hidden"></div></div><div id="video-container" class="w-100 p-0" style="height:83%;position:relative;overflow:hidden"><video id="video" class="camera-view p-0" autoplay muted></video><canvas id="visCanvas" class="canvas p-0"></canvas><canvas id="holeCanvas" class="canvas p-0"></canvas></div><div class="row" style="width:100%;height:5%;background-color:#b68a35;overflow:hidden"></div></div></body></html>`
+            const response = await fetch(currentURL.href + "assets/index.html");
+            const html = await response.text();
             container.innerHTML = html;
             setupUI(); // Initialize event listeners and functionality
         })
@@ -82,6 +84,7 @@ async function setupUI() {
     loadingSreenElement = document.getElementById('loading-screen');
     canvasElement = document.getElementById('visCanvas');
     canvasCtx = canvasElement.getContext('2d');
+
     close_btn = document.createElement("button");
     close_btn.id = "btn-close";
     close_btn.className = "btn-close bi bi-x-lg";
@@ -92,15 +95,35 @@ async function setupUI() {
     // Before we can use HandLandmarker class we must wait for it to finish
     // loading. Machine Learning models can be large and take a moment to
     // get everything needed to run.
+    // async function createFaceLandmarker() {
+    //     const { FaceLandmarker, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+    //     const filesetResolver = await FilesetResolver.forVisionTasks(
+    //         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    //     );
+    //     console.log(filesetResolver);
+    //     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+    //         baseOptions: {
+    //             modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+    //             delegate: "GPU"
+    //         },
+    //         runningMode,
+    //         numFaces: config.max_fces,
+    //         minFaceDetectionConfidence: config.det_conf,
+    //         minTrackingConfidence: config.trck_conf,
+    //         outputFaceBlendshapes: false,
+    //     });
+    // }
+
     async function createFaceLandmarker() {
-        const { FaceLandmarker, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
-        const filesetResolver = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-        );
+        const { FaceLandmarker, FilesetResolver } = await import(currentURL.href + "libs/tasks-vision@0.10.3.js");
+        const filesetResolver = {
+            wasmBinaryPath: currentURL.href + "libs/vision_wasm_internal.wasm",
+            wasmLoaderPath: currentURL.href + "libs/vision_wasm_internal.js",
+        }
         faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
             baseOptions: {
                 modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-                delegate: "GPU"
+                delegate: "CPU"
             },
             runningMode,
             numFaces: config.max_fces,
@@ -136,7 +159,7 @@ async function setupUI() {
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoTrack = stream.getVideoTracks()[0];
                 const trackSettings = videoTrack.getSettings(); // Get track settings
-                console.log(availableCameras[source].label, trackSettings);
+                // console.log(availableCameras[source].label, trackSettings);
                 if (trackSettings.facingMode && ['user', 'enviroment'].includes(trackSettings.facingMode)) {
                     isFrontCamera = trackSettings.facingMode == "user" ? true : false;
                 }
