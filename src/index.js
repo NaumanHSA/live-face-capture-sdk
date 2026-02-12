@@ -1,19 +1,3 @@
-import { initializeCapture,  shutDown} from './core.js';
-
-
-const LiveFaceCapture = {
-    open(config) {
-        if (!config || typeof config !== 'object') {
-            throw new Error("Invalid configuration object provided.");
-        }
-        // Initialize the capture process
-        initializeCapture(config);
-    },
-    async close(){
-        return shutDown();
-    }
-};
-
+import LiveFaceCapture from "./sdk.js";
 export default LiveFaceCapture;
-
-
+export { createLiveFaceCapture } from "./sdk.js";

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Capture</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+
+    body {
+      background-color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .start-button {
+      background-color: #b68a34;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .start-button:hover { background-color: #9e7629; }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature { text-align: center; }
+    .feature i { font-size: 2rem; color: #b68a34; }
+    .feature p { color: #666; line-height: 1.5; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div class="container" style="max-height: 100%;">
+    <div id="main" class="mt-5 card">
+      <h1>Live Face Capture Demo</h1>
+
+      <button id="example_button" class="start-button">
+        Start Verification
+      </button>
+
+      <div class="features">
+        <div class="feature">
+          <h4>Secure</h4>
+          <p>Advanced anti-spoofing technology for reliable verification</p>
+        </div>
+        <div class="feature">
+          <i class="fas fa-bolt"></i>
+          <h4>Fast</h4>
+          <p>Quick and efficient verification process</p>
+        </div>
+        <div class="feature">
+          <h4>Accurate</h4>
+          <p>Precise biometric verification technology</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="preview-container" class="mt-5 card" style="display:none; max-height: 100vh; width: 100%;">
+      <img id="preview" style="object-fit: contain; width: 100%" />
+      <button id="back" class="btn btn-secondary mt-3">Back</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import LiveFaceCapture from "./dist/live-face-capture.esm.js";
+
+    // optional: pre-request camera permission to avoid surprise prompt after clicking
+    await navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      stream.getTracks().forEach((t) => t.stop());
+    });
+
+    document.getElementById("example_button").addEventListener("click", () => {
+      LiveFaceCapture.open({
+        config: {
+          is_front_camera: true,
+          camera_id: 0,               // or deviceId string if you want
+          allow_multiple_faces: false,
+          max_camera_res: 1920,
+          time_to_blink: 1500,
+          min_face_detection_conf: 0.5,
+          face_area_thres: 0.3,
+          pitch_thresh: 30,
+          yaw_thresh: 30,
+          roll_thresh: 30,
+          blink_eye_frames: 3,
+
+          // ✅ no encryption at all
+          encrypt: false,
+          enc_key: null,
+        },
+
+        style: {
+          vis: true,
+          hole_height: 0.7,
+          hole_width: 0.7,
+          doc_color: "white",
+          doc_opacity: 1.0,
+          face_color_success: "rgba(0, 255, 0, 1)",
+          face_color_fail: "#ff0000",
+          font_size: null,
+        },
+
+        onCaptureComplete: async (results) => {
+          console.log("SDK results:", results);
+
+          const imgPrev = document.getElementById("preview");
+          imgPrev.src = results.best_frame;   // base64 data URL
+
+          document.getElementById("preview-container").style.display = "flex";
+          document.getElementById("main").style.display = "none";
+        },
+
+        onError: (err) => console.error("SDK error:", err),
+        onClose: () => console.log("SDK closed"),
+      });
+    });
+
+    document.getElementById("back").addEventListener("click", () => {
+      document.getElementById("preview-container").style.display = "none";
+      document.getElementById("main").style.display = "flex";
+    });
+  </script>
+</body>
+
+</html>

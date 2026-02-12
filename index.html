@@ -2,200 +2,316 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Capture</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Capture</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-        }
-        body {
-            background-color: #f5f5f5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 1.5rem;
-            font-size: 2rem;
-            font-weight: 500;
-        }
-        .start-button {
-            background-color: #b68a34;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .start-button:hover {
-            background-color: #9e7629;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-        .feature {
-            text-align: center;
-        }
-        .feature i {
-            font-size: 2rem;
-            color: #b68a34;
-        }
-        .feature h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        .feature p {
-            color: #666;
-            line-height: 1.5;
-            font-size: 14px;
-        }
-    </style>
-    <script src="./dist/live-face-capture.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+
+    body { background-color: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .card { background-color: white; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+
+    h1 { color: #333; margin-bottom: 1.5rem; font-size: 2rem; font-weight: 500; }
+
+    .start-button { background-color: #b68a34; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+
+    .start-button:hover { background-color: #9e7629; }
+
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem; }
+
+    .feature { text-align: center; }
+
+    .feature i { font-size: 2rem; color: #b68a34; }
+
+    .feature h3 { color: #333; margin-bottom: 0.5rem; }
+
+    .feature p { color: #666; line-height: 1.5; font-size: 14px; }
+
+    /* --- key panel --- */
+    .keys-panel { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; text-align: left; }
+
+    .keys-panel h5 { margin-bottom: .75rem; color: #333; }
+
+    .keys-panel pre {
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: .75rem;
+      font-size: 11px;
+      max-height: 180px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .keys-actions {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .75rem;
+    }
+
+    .small-note { font-size: 12px; color: #666; margin-top: .25rem; }
+
+    .pill { font-size: 12px; padding: .2rem .5rem; border-radius: 999px; background: #f3f3f3; color: #444; }
+
+    .switch-wrap { display: flex; align-items: center; gap: .5rem; }
+    .switch-label { font-size: 13px; color: #333; font-weight: 500; }
+  </style>
 </head>
 
-
 <body>
-    <div class="container" style="max-height: 100%;">
-        <div id="main" class="mt-5 card">
-            <h1>Live Face Capture Demo</h1>
-            <button id="example_button" class="start-button" style="justify-content: center;">Start Verification</button>
-            <div class="features">
-                <div class="feature">
-                    <h4>Secure</h4>
-                    <p>Advanced anti-spoofing technology for reliable verification</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-bolt"></i>
-                    <h4>Fast</h4>
-                    <p>Quick and efficient verification process</p>
-                </div>
-                <div class="feature">
-                    <h4>Accurate</h4>
-                    <p>Precise biometric verification technology</p>
-                </div>
+  <div class="container" style="max-height: 100%;">
+    <div id="main" class="mt-5 card">
+      <h1>Live Face Capture Demo</h1>
+
+      <button id="example_button" class="start-button" style="justify-content: center;">
+        Start Verification
+      </button>
+
+      <div class="features">
+        <div class="feature">
+          <h4>Secure</h4>
+          <p>Advanced anti-spoofing technology for reliable verification</p>
+        </div>
+        <div class="feature">
+          <i class="fas fa-bolt"></i>
+          <h4>Fast</h4>
+          <p>Quick and efficient verification process</p>
+        </div>
+        <div class="feature">
+          <h4>Accurate</h4>
+          <p>Precise biometric verification technology</p>
+        </div>
+      </div>
+
+      <!-- ✅ Keys / Encryption Panel -->
+      <div class="keys-panel">
+        <div class="keys-actions">
+          <div class="switch-wrap">
+            <div class="switch-label">Encryption (Demo)</div>
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="encrypt_switch">
+              <label class="custom-control-label" for="encrypt_switch"></label>
             </div>
+          </div>
+
+          <div style="display:flex; gap:.5rem; align-items:center;">
+            <span id="keys_status" class="pill">keys: not generated</span>
+            <span class="pill">encrypt: <b id="enc_mode">off</b></span>
+          </div>
         </div>
-        <div id="preview-container" class="mt-5 card" style="display: none; max-height: 100vh; width: 100%;">
-            <img id="preview" style="object-fit: contain; width: 100%"/>
+
+        <div class="small-note">
+          Toggle ON generates an RSA key pair in-browser (demo only) and decrypts the frame locally.
+          Production: keep private key on server.
         </div>
+
+        <h5 class="mt-3">Public Key (SDK uses this)</h5>
+        <pre id="pub_out">Encryption is OFF</pre>
+
+        <h5 class="mt-3">Private Key (demo decrypt only)</h5>
+        <pre id="pri_out">Encryption is OFF</pre>
+      </div>
     </div>
 
-    <script type="module">
-        import LiveFaceCapture from "./src/index.js";
-        import {decryptSecretExecutionData} from "./src/encryption.js";
-        import "./temp.js";
+    <div id="preview-container" class="mt-5 card" style="display:none; max-height:100vh; width:100%;">
+      <img id="preview" style="object-fit: contain; width: 100%" />
+      <button id="back" class="btn btn-secondary mt-3">Back</button>
+    </div>
+  </div>
 
-        const key = `
-            -----BEGIN PRIVATE KEY-----
-            MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCnShxo3alRY7DX
-            qLgVpfIBv8Xu8U4UDFAd3fjaZ7NQ97GfCpUZrMAWhzmxAHDm5OJFfeFNKZIg+fFC
-            Mbt/vS52BK0YDo2XS6LFT2qRAV62GVVjytUnC1JNAqXAj6oCnFZYGL0pi7/0OU9R
-            4VpKMvNo66Paakq/qJAP4n0RFLjx33+S+3Wzh++dMr+4Yeo24f6Q6g9NDZ6KkgM3
-            TWbz+pPEfrZxZ6yOKjbCQgEPY2UFOZHMvJqtMBBYHj+wFrm8Z7GdRQS9FwAE7Xrs
-            n8Mo12XaznApoWVCJi1n5M1lxLqR1AcDIRi4FW9skJdEBzqByOrSM0pq6hwujDvC
-            34cAXse7AgMBAAECggEAFreeCLDj4lU7BD45fq8XSxzYwIGXob9TozVWgDTe3prp
-            ovhT67WlgX8BhZjSvCLO212kb88PtKyxvNR2FXsCSS00uEnu+QxgtpH58xEQOdhS
-            MTKvzr/fKu1gxuJ7gCPs0cUiQvcNrRjvPZDwVZfPrYAlCG8GEZAkEr7QpGDVBftP
-            INeT4UnhD2etir94p5EB+xGoSCuiql3XpG6cNTCa8UBtHda3cgxtGvrXgSUkCDIY
-            chK72jjk5etmHgjzSOPIU9JUBZV9UDXu7VBQUY4ZVrQ2RjYLaw4a2VmCRUgFR7zS
-            shqUHkMAFHinsWKQ3t02hazMS9OxMSOgt7Fwd4uBUQKBgQDc5QOOLihrzlZT1pfT
-            FqD+bWTzBRKZTN46yBHtwrkXvmOYvfxGLwi4aK3UoHO8pGiG+DOUmQpgADrsqIw1
-            /txD+DiOL8PBRsQ63U14JmLs4Y6rdJdvc/z1E8MbfLwpAqho3VunLoPebb9bUgyq
-            lK0DSAxMX62CPRULvj2QAEfzAwKBgQDB4DNjmTCKfhiZfcDnFk+WgF1xX5R1VrGz
-            tzliSC1phbxaZbD+ZHc1jYorJhzyt33m+XR1dWFwrBqNZBh/6N9guyGK9922uJ8d
-            vGdjb1kDtqbOQS7ZBKVzI+bBrfrZxESQV6bUvkg3D+H2De5W2nn0jebY0rHFToQv
-            FqAjcWLe6QKBgAyCD0x6wqEwIuVGbnxueJlPmnrEW8RAfQj5EULUVuTITB13DJTw
-            zt6aVtWGbGdPK/gQj+MnM1YyTSPfe2kHUHOs1479l2kXV785jsxx6AIf15NP289c
-            0wMRpmelDYaI9v5RIoJ5+M+ciUxjfgIevxlDeCbO+CU6zjlHAXdo/Kn/AoGAQeOx
-            c1r/vUGnmJq9cYwKlmqf10UVjl9dW2ec0AMZs/AomExRP9PjE8c7uvhkBDVKS7Jh
-            2v1+lS1YhM8M6IO7TwOqHbGpn0zVfuSl+oxAI1vzCsvqYQUMObps1UwMoe/rIWc4
-            orrcjiIOuHH5m3j605taZjwNALJziBFXcVQ6tukCgYEAl6M3W9/ntdGb2wtDwep6
-            SmPgMAGFy3BU498+Ki1ka7GptgRRcZfdZ8twZvHWW1qKPhs4fTP+Deh64qWtI23b
-            ap9scD4oRcaA8P2R752YfXc6ZmFpptip27Z9Z7KMl9/wPTi+eZvd6XxvbtmihyVD
-            vcCqqL+O0gWIjeCJnhVymec=
-            -----END PRIVATE KEY-----
-        `
+  <script type="module">
+    import LiveFaceCapture from "./dist/live-face-capture.esm.js";
+    import { decryptEnvelope } from "./src/crypto/envelope.js";
 
-        // get camera permission
-        await navigator.mediaDevices.getUserMedia({video: true}).then((stream) => {
-            stream.getTracks().forEach((track) => track.stop()); // Stop each track
-        });
-        
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter(device => device.kind === "videoinput");
-        console.log("Devices from Index:", videoInputs);
+    // ---------------------------
+    // Demo RSA keygen (WebCrypto)
+    // ---------------------------
+    const u8ToB64 = (u8) => {
+      let s = "";
+      for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+      return btoa(s);
+    };
 
-        const encrypt = false;
-        document.getElementById('example_button').addEventListener('click', function () {
-            LiveFaceCapture.open({
-                config: {
-                    is_front_camera: false,
-                    // camera_id: videoInputs[0].deviceId,
-                    camera_id: 0,
-                    allow_multiple_faces: false,
-                    max_camera_res: 1920,
-                    time_to_blink: 1500,
-                    min_face_detection_conf: 0.5,
-                    face_area_thres: 0.3,
-                    pitch_thresh: 15,
-                    yaw_thresh: 15,
-                    roll_thresh: 15,
-                    blink_eye_frames: 2,
-                    encrypt: encrypt,
-                },
-                style: {
-                    vis: true,
-                    hole_height: 0.7,
-                    hole_width: 0.7,
-                    doc_color: 'white',
-                    doc_opacity: 1.0,
-                    face_color_success: 'rgba(0, 255, 0, 1)',
-                    face_color_fail: '#ff0000',
-                    font_size: null,
-                },
-                onCaptureComplete: async (results) => {
-                    console.log(results);
-                    const imgPrev = document.getElementById("preview");
-                    if(encrypt){
-                        const decryptedData = await decryptSecretExecutionData(results.best_frame, key);
-                        imgPrev.src = decryptedData;
-                    } else {
-                        imgPrev.src = results.best_frame;
-                    }
-                    imgPrev.style.display = "flex";
-                    document.getElementById("preview-container").style.display = "flex";
-                    document.getElementById("main").style.display = "none";
-                },
-                onError: (error) => {
-                    console.error(error);
-                },
-                onClose: () => {
-                    console.log("Everything Shutdown...");
-                }
-            });
-        });
-    </script>
+    function wrapPem(b64, type) {
+      const lines = b64.match(/.{1,64}/g) || [];
+      return `-----BEGIN ${type}-----\n${lines.join("\n")}\n-----END ${type}-----`;
+    }
+
+    async function exportPublicKeyPem(publicKey) {
+      const spki = new Uint8Array(await crypto.subtle.exportKey("spki", publicKey));
+      return wrapPem(u8ToB64(spki), "PUBLIC KEY");
+    }
+
+    async function exportPrivateKeyPem(privateKey) {
+      const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", privateKey));
+      return wrapPem(u8ToB64(pkcs8), "PRIVATE KEY");
+    }
+
+    async function generateRsaKeyPairPem() {
+      const kp = await crypto.subtle.generateKey(
+        {
+          name: "RSA-OAEP",
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: "SHA-256",
+        },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      return {
+        publicPem: await exportPublicKeyPem(kp.publicKey),
+        privatePem: await exportPrivateKeyPem(kp.privateKey),
+      };
+    }
+
+    // ---------------------------
+    // UI + state
+    // ---------------------------
+    let encrypt = false;
+    let PUBLIC_KEY_PEM = null;
+    let PRIVATE_KEY_PEM = null;
+
+    const btnStart = document.getElementById("example_button");
+    const sw = document.getElementById("encrypt_switch");
+    const status = document.getElementById("keys_status");
+    const encMode = document.getElementById("enc_mode");
+    const pubOut = document.getElementById("pub_out");
+    const priOut = document.getElementById("pri_out");
+
+    function setEncryptUI(on) {
+      encrypt = !!on;
+      encMode.textContent = encrypt ? "on" : "off";
+
+      if (!encrypt) {
+        PUBLIC_KEY_PEM = null;
+        PRIVATE_KEY_PEM = null;
+        status.textContent = "keys: not generated";
+        pubOut.textContent = "Encryption is OFF";
+        priOut.textContent = "Encryption is OFF";
+      }
+    }
+
+    // initial state
+    setEncryptUI(false);
+
+    // Toggle behavior:
+    // ON  -> generate keys
+    // OFF -> clear keys
+    sw.addEventListener("change", async () => {
+      if (!sw.checked) {
+        setEncryptUI(false);
+        return;
+      }
+
+      // Turn ON: generate keys
+      setEncryptUI(true);
+      status.textContent = "keys: generating...";
+      pubOut.textContent = "Generating...";
+      priOut.textContent = "Generating...";
+
+      try {
+        const { publicPem, privatePem } = await generateRsaKeyPairPem();
+        PUBLIC_KEY_PEM = publicPem;
+        PRIVATE_KEY_PEM = privatePem;
+
+        pubOut.textContent = PUBLIC_KEY_PEM;
+        priOut.textContent = PRIVATE_KEY_PEM;
+        status.textContent = "keys: ready";
+      } catch (e) {
+        console.error(e);
+        status.textContent = "keys: failed";
+        pubOut.textContent = "Key generation failed";
+        priOut.textContent = "Key generation failed";
+        // revert switch
+        sw.checked = false;
+        setEncryptUI(false);
+      }
+    });
+
+    // camera permission (optional)
+    await navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      stream.getTracks().forEach((t) => t.stop());
+    });
+
+    // v2 token check
+    const isV2Token = (s) => typeof s === "string" && s.startsWith("v2.");
+
+    btnStart.addEventListener("click", () => {
+      if (encrypt && (!PUBLIC_KEY_PEM || !PRIVATE_KEY_PEM)) {
+        alert("Encryption is ON but keys are not ready yet.");
+        return;
+      }
+
+      LiveFaceCapture.open({
+        config: {
+          is_front_camera: true,
+          camera_id: 0,
+          allow_multiple_faces: false,
+          max_camera_res: 1920,
+          time_to_blink: 1500,
+          min_face_detection_conf: 0.5,
+          face_area_thres: 0.3,
+          pitch_thresh: 30,
+          yaw_thresh: 30,
+          roll_thresh: 30,
+          blink_eye_frames: 3,
+
+          encrypt,
+          enc_key: PUBLIC_KEY_PEM,          // only set when encrypt=true
+          encryption: { alg: "A256GCM" },
+        },
+
+        style: {
+          vis: true,
+          hole_height: 0.7,
+          hole_width: 0.7,
+          doc_color: "white",
+          doc_opacity: 1.0,
+          face_color_success: "rgba(0, 255, 0, 1)",
+          face_color_fail: "#ff0000",
+          font_size: null,
+        },
+
+        onCaptureComplete: async (results) => {
+          console.log("SDK results:", results);
+          console.log("best_frame:", results.best_frame);
+          console.log("parts:", String(results.best_frame).split(".").length);
+
+          const imgPrev = document.getElementById("preview");
+          const frame = results?.best_frame;
+
+          if (encrypt) {
+            if (!isV2Token(frame)) {
+              console.error("Expected v2 token, got:", frame);
+              alert("Encrypt is ON, but SDK did not return a v2 token. (Your SDK is still outputting legacy format)");
+              return;
+            }
+            const base64 = await decryptEnvelope(frame, PRIVATE_KEY_PEM);
+            imgPrev.src = base64;
+          } else {
+            imgPrev.src = frame;
+          }
+
+          document.getElementById("preview-container").style.display = "flex";
+          document.getElementById("main").style.display = "none";
+        },
+
+        onError: console.error,
+        onClose: () => console.log("Everything Shutdown..."),
+      });
+    });
+
+    document.getElementById("back").addEventListener("click", () => {
+      document.getElementById("preview-container").style.display = "none";
+      document.getElementById("main").style.display = "flex";
+    });
+  </script>
 </body>
 </html>
