@@ -58,7 +58,7 @@ export const styles_default = {
   VIS: true,
   DOC_COLOR: "#FFFFFF",
   DOC_OPACITY: 0.72,
-  HOLE_HEIGHT: 0.60,
+  HOLE_HEIGHT: 0.55,
   HOLE_WIDTH: 0.65,
   FACE_COLOR_SUCCESS: "#32CD32",
   FACE_COLOR_FAIL: "#FF5733",

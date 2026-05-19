@@ -130,6 +130,10 @@
   <script type="module">
     import { default as LiveFaceCapture, decryptEnvelope } from "./dist/live-face-capture.esm.js";
 
+    // Kick off WASM download + compilation in the background immediately.
+    // By the time the user clicks Start the 8 MB runtime is already compiled.
+    LiveFaceCapture.preload();
+
     // ---------------------------
     // Demo RSA keygen (WebCrypto)
     // ---------------------------
@@ -282,11 +286,8 @@
 
         style: {
           vis: false,
-          hole_height: 0.7,
-          hole_width: 0.7,
-          face_color_success: "rgba(0, 255, 0, 1)",
-          face_color_fail: "#ff0000",
-          font_size: null,
+          face_color_success: "#32CD32",
+          face_color_fail: "#FF5733",
         },
 
         onCaptureComplete: async (results) => {

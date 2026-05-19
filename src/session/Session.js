@@ -88,15 +88,18 @@ export class Session {
             if (loadingText) loadingText.textContent = this.config.messages.LOADING;
             if (loading) loading.style.display = "flex";
 
-            // ---- create landmarker ----
-            this.faceLandmarker = await createFaceLandmarker(this.config, "VIDEO");
-
-            // ---- start camera ----
+            // ---- landmarker + camera constraints in parallel ----
+            // WASM compilation (8 MB) and camera permission are independent —
+            // running them together shaves several seconds off startup time.
             if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
                 throw makeError(ErrorCode.CAMERA_NOT_SUPPORTED, "getUserMedia() is not supported by your browser");
             }
 
-            const { isFrontCamera, constraints } = await computeCameraConstraints(this.videoEl, this.config);
+            const [faceLandmarker, { isFrontCamera, constraints }] = await Promise.all([
+                createFaceLandmarker(this.config, "VIDEO"),
+                computeCameraConstraints(this.videoEl, this.config),
+            ]);
+            this.faceLandmarker = faceLandmarker;
             this.isFrontCamera = isFrontCamera;
 
             // Canvases remain unmirrored so text isn't flipped.
