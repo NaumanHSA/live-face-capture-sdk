@@ -28,6 +28,10 @@ export function drawHole(root, videoElement, config, borderColor, message) {
 
   const ctx = canvas.getContext("2d");
 
+  // Clear first — without this, each semi-transparent fillRect stacks on
+  // top of the previous frame's pixels, making the overlay progressively
+  // more opaque and ghosting old messages.
+  ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = config.DOC_COLOR;
   ctx.globalAlpha = config.DOC_OPACITY;
   ctx.fillRect(0, 0, W, H);
