@@ -236,14 +236,26 @@
       }
     });
 
-    // camera permission (optional)
-    await navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      stream.getTracks().forEach((t) => t.stop());
-    });
+    // Pre-flight camera permission prompt (optional UX nicety).
+    // navigator.mediaDevices is only available on HTTPS or localhost.
+    // Over plain HTTP from a remote host it is undefined — guard it.
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      console.warn(
+        "Camera API unavailable: page must be served over HTTPS (or localhost). " +
+        "Current origin:", location.origin
+      );
+      btnStart.disabled = true;
+      btnStart.title = "Camera requires HTTPS";
+      btnStart.textContent = "HTTPS required for camera access";
+    } else {
+      await navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => stream.getTracks().forEach((t) => t.stop()))
+        .catch(() => {}); // user may deny; SDK will handle it on open()
+    }
 
     // v2 token check
     const isV2Token = (s) => typeof s === "string" && s.startsWith("v2.");
-
+    
     btnStart.addEventListener("click", () => {
       if (encrypt && (!PUBLIC_KEY_PEM || !PRIVATE_KEY_PEM)) {
         alert("Encryption is ON but keys are not ready yet.");
