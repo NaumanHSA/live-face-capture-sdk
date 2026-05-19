@@ -37,7 +37,9 @@ export function drawHole(root, videoElement, config, borderColor, message) {
   ctx.fillRect(0, 0, W, H);
 
   const ovalHeight = H * config.HOLE_HEIGHT;
-  const ovalWidth = ovalHeight * config.HOLE_WIDTH;
+  // Cap width so the oval never bleeds to the screen edges on portrait mobile.
+  // HOLE_WIDTH is relative to ovalHeight, which can exceed W when H >> W.
+  const ovalWidth = Math.min(ovalHeight * config.HOLE_WIDTH, W * 0.82);
   const centerX = W / 2;
   const centerY = H / 2;
 
