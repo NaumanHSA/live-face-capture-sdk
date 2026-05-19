@@ -1,17 +1,16 @@
 {
     "name": "live-face-capture",
-    "version": "2.0.0",
+    "version": "4.0.0",
     "description": "Face liveness and capture SDK.",
-    "main": "dist/live-face-capture.js",
-    "module": "dist/live-face-capture.js",
-    "browser": "dist/live-face-capture.js",
-    "buildDate": "2024-11-22",
-    "expiryDate": "2025-11-22",
+    "main": "dist/live-face-capture.umd.js",
+    "module": "dist/live-face-capture.esm.js",
+    "browser": "dist/live-face-capture.umd.js",
+    "types": "live-face-capture.d.ts",
     "type": "module",
     "scripts": {
         "build": "rollup --config",
         "start": "rollup --config --watch",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "vitest run"
     },
     "keywords": [
         "capture",
@@ -21,16 +20,13 @@
     ],
     "author": "Nouman Ahsan",
     "license": "MIT",
-    "repository": "https://ssopdevops.moiface.ae/DefaultCollection/FaceCapture%20SDK/_git/FaceCapture%20SDK",
     "devDependencies": {
-        "rollup": "^4.27.3",
         "@rollup/plugin-terser": "^0.4.4",
-        "rollup-plugin-copy": "^3.5.0"
+        "rollup": "^4.27.3",
+        "rollup-plugin-copy": "^3.5.0",
+        "vitest": "^4.1.6"
     },
     "dependencies": {
-        "buffer": "^6.0.3",
-        "@rollup/plugin-terser": "^0.4.4",
-        "rollup": "^4.27.3",
-        "rollup-plugin-copy": "^3.5.0"
+        "buffer": "^6.0.3"
     }
 }

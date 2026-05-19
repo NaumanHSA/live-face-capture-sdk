@@ -1,17 +1,38 @@
-export async function drawHole(root, videoElement, config, borderColor, message) {
+let _lastColor = null;
+let _lastMessage = null;
+let _lastW = 0;
+let _lastH = 0;
+let _lastOval = null;
+
+export function drawHole(root, videoElement, config, borderColor, message) {
+  const W = videoElement.videoWidth;
+  const H = videoElement.videoHeight;
+
+  if (
+    _lastColor === borderColor &&
+    _lastMessage === message &&
+    _lastW === W &&
+    _lastH === H &&
+    _lastOval !== null
+  ) {
+    return _lastOval;
+  }
+
   const canvas = root.querySelector('[data-lfc="holeCanvas"]');
-  canvas.width = videoElement.videoWidth;
-  canvas.height = videoElement.videoHeight;
+
+  if (canvas.width !== W) canvas.width = W;
+  if (canvas.height !== H) canvas.height = H;
+
   const ctx = canvas.getContext("2d");
 
   ctx.fillStyle = config.DOC_COLOR;
   ctx.globalAlpha = config.DOC_OPACITY;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, W, H);
 
-  const ovalHeight = canvas.height * config.HOLE_HEIGHT;
+  const ovalHeight = H * config.HOLE_HEIGHT;
   const ovalWidth = ovalHeight * config.HOLE_WIDTH;
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
+  const centerX = W / 2;
+  const centerY = H / 2;
 
   ctx.globalCompositeOperation = "destination-out";
   ctx.beginPath();
@@ -25,65 +46,25 @@ export async function drawHole(root, videoElement, config, borderColor, message)
   ctx.ellipse(centerX, centerY, ovalWidth / 2, ovalHeight / 2, 0, 0, 2 * Math.PI);
   ctx.stroke();
 
-  let fontSize = config.FONT_SIZE;
-  if (!fontSize) fontSize = Math.round(canvas.height * 0.03);
+  const fontSize = config.FONT_SIZE || Math.round(H * 0.03);
   ctx.fillStyle = borderColor;
   ctx.font = `${fontSize}px Arial`;
   ctx.textAlign = "center";
   ctx.globalAlpha = 1;
-  ctx.fillText(message, canvas.width / 2, canvas.height * 0.05);
+  ctx.fillText(message, W / 2, H * 0.05);
 
-  return [centerX, centerY, ovalWidth, ovalHeight];
+  _lastColor = borderColor;
+  _lastMessage = message;
+  _lastW = W;
+  _lastH = H;
+  _lastOval = [centerX, centerY, ovalWidth, ovalHeight];
+  return _lastOval;
 }
 
-
-
-// export async function drawHole(videoElement, config, borderColor, message) {
-//     const canvas = document.getElementById('holeCanvas');
-//     canvas.width = videoElement.videoWidth;
-//     canvas.height = videoElement.videoHeight;
-//     const ctx = canvas.getContext('2d');
-
-//     // Draw a semi-transparent overlay
-//     // ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-//     ctx.fillStyle = config.DOC_COLOR;
-//     ctx.globalAlpha = config.DOC_OPACITY;
-//     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-//     // Define the oval dimensions and position
-//     const ovalHeight = canvas.height * config.HOLE_HEIGHT;
-//     const ovalWidth = ovalHeight * config.HOLE_WIDTH;
-//     const centerX = canvas.width / 2;
-//     const centerY = canvas.height / 2;
-
-//     // Clear an oval in the center
-//     ctx.globalCompositeOperation = 'destination-out';
-//     ctx.beginPath();
-//     ctx.ellipse(centerX, centerY, ovalWidth / 2, ovalHeight / 2, 0, 0, 2 * Math.PI);
-//     ctx.fill();
-//     // Reset global composite operation for the border
-//     ctx.globalCompositeOperation = 'source-over';
-
-//     // Draw the border around the oval
-//     ctx.strokeStyle = borderColor;
-//     ctx.lineWidth = 10; // Border thickness
-//     ctx.beginPath();
-//     ctx.ellipse(centerX, centerY, ovalWidth / 2, ovalHeight / 2, 0, 0, 2 * Math.PI);
-//     ctx.stroke();
-
-//     // Add text at the top of the canvas
-//     let fontSize = config.FONT_SIZE;
-//     if (!fontSize) {
-//         const fontScale = 0.03; // Adjust this value to control the relative font size
-//         fontSize = Math.round(canvas.height * fontScale); // Calculate font size based on canvas width    
-//     }
-//     ctx.fillStyle = borderColor;
-//     ctx.font = `${fontSize}px Arial`; // Apply responsive font size
-//     ctx.textAlign = "center"; // Center the text horizontally
-
-//     // const ovalTop = centerY - (ovalHeight / 2);
-//     ctx.fillText(message, canvas.width / 2, canvas.height * 0.05); // Position text near the top
-//     // ctx.fillText(message, canvas.width / 2, canvas.height * 0.92); // Position text near the top
-//     const hole = [centerX, centerY, ovalWidth, ovalHeight];
-//     return hole;
-// }
+export function resetHoleDirtyState() {
+  _lastColor = null;
+  _lastMessage = null;
+  _lastW = 0;
+  _lastH = 0;
+  _lastOval = null;
+}

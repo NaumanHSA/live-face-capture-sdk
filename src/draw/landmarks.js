@@ -4,7 +4,7 @@ export function drawLandmarksCustom(ctx, landmarks, style, indices = null) {
   for (const lm of landmarks) {
     if (!indices || indices.includes(idx)) {
       ctx.beginPath();
-      ctx.arc(lm.x, lm.y, style.raduis, 0, 2 * Math.PI);
+      ctx.arc(lm.x, lm.y, style.radius, 0, 2 * Math.PI);
       ctx.fill();
     }
     idx += 1;

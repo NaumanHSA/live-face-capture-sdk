@@ -9,45 +9,52 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  workspace: '($Pipeline.Workspace)'
+  workspace: '$(Pipeline.Workspace)'
 
 trigger:
   - master
+  - main
+
+pr:
+  branches:
+    include:
+      - master
+      - main
 
 pool:
   name: Devsecops
 
 steps:
 
-# Notification Starting node.js install
 - script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"Starting node.js, angular, npm installation: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
-  displayName: 'Notify: Starting node.js, angular, npm installation.'
+    curl -H "Content-Type: application/json" \
+      -d "{\"text\": \"CI started: Live-Face-Capture-SDK @ $(Build.SourceBranchName) ($(Build.Reason))\"}" \
+      "$(teamsWebhookUrl)"
+  displayName: 'Notify: CI started'
 
 - task: NodeTool@0
   inputs:
-    versionSpec: '20.17.0'  # Choose Node.js version
+    versionSpec: '20.17.0'
   displayName: 'Install Node.js'
 
-- script: |
-    cd .
-    npm install -f --verbose
-  displayName: 'Npm Install'
+- script: npm ci
+  displayName: 'Install dependencies (npm ci)'
 
-# Notification Starting node.js install
-- script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"node.js, angular, npm installation completed: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
-  displayName: 'Notify: node.js, angular, npm installation completed.'
+# ── Quality gates ────────────────────────────────────────────────────────────
+
+- script: npm test
+  displayName: 'Run unit tests (Vitest)'
+
+- script: npm run build
+  displayName: 'Build SDK (Rollup)'
 
 - script: |
-    cd .
-    npm run build
-  displayName: 'Build Project'
+    curl -H "Content-Type: application/json" \
+      -d "{\"text\": \"✅ Tests + build passed: Live-Face-Capture-SDK @ $(Build.SourceBranchName)\"}" \
+      "$(teamsWebhookUrl)"
+  displayName: 'Notify: Tests + build passed'
 
-# Notification after build complete
-- script: |
-    curl -H "Content-Type: application/json" -d "{\"text\": \"Build successfully completed: Live-Face-Capture-SDK-$(Build.SourceBranchName)\"}" "$(teamsWebhookUrl)"
-  displayName: 'Notify: Build successfully Completed'
+# ── Artefacts ────────────────────────────────────────────────────────────────
 
 - task: ArchiveFiles@2
   inputs:
@@ -57,68 +64,64 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/Live-Face-Capture-SDK-$(Build.BuildId).zip'
     replaceExistingArchive: false
     verbose: true
+  displayName: 'Archive dist/'
 
 - task: CopyFiles@2
   inputs:
-    contents: '$(Build.ArtifactStagingDirectory)/Live-Face-Capture-SDK-$(Build.BuildId).zip'  # Adjust path based on the Angular build output
-    targetFolder: '$(Build.ArtifactStagingDirectory)'  # Staging directory for artifacts
-  displayName: 'Copy files to artifact staging directory'
+    contents: '$(Build.ArtifactStagingDirectory)/Live-Face-Capture-SDK-$(Build.BuildId).zip'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Stage artefact'
 
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
+  displayName: 'Publish artefact'
 
-# Notification after publishing solution
 - script: |
-    webhookUrl="$(teamsWebhookUrl)"
-    text="Solution and Artifacts published successfully: Live-Face-Capture-SDK-$(Build.SourceBranchName)"
-    payload="{\"text\": \"$text\"}"
-    curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
-  displayName: 'Notify: Solution Published Successfully'
+    curl -H "Content-Type: application/json" \
+      -d "{\"text\": \"📦 Artefact published: Live-Face-Capture-SDK @ $(Build.SourceBranchName)\"}" \
+      "$(teamsWebhookUrl)"
+  displayName: 'Notify: Artefact published'
+
+# ── Version extraction ───────────────────────────────────────────────────────
 
 - task: Bash@3
-  displayName: Extract Latest Release Version
+  displayName: 'Extract release version from history file'
   inputs:
     targetType: 'inline'
     script: |
-      # Locate the Release History file
       RELEASE_FILE="$(Pipeline.Workspace)/s/_ReleaseHistory_LiveFaceCapture_Web.MD"
-      
-      # Extract the first version number in the file (assuming the latest version is listed first)
       LATEST_VERSION=$(grep -m 1 -oP '(?<=Version \*\*)[0-9]+\.[0-9]+\.[0-9]+' "$RELEASE_FILE")
-
-      # Output the version as a pipeline variable
       echo "##vso[task.setvariable variable=LatestReleaseVersion]$LATEST_VERSION"
-
-      # Optional debug output
       echo "Latest Release Version: $LATEST_VERSION"
+
+# ── Docker ───────────────────────────────────────────────────────────────────
 
 - task: Docker@2
   displayName: 'Login to Docker registry'
   inputs:
-      containerRegistry: 'DevSecOps-docker'  # Use the service connection name you created
-      command: 'login'
+    containerRegistry: 'DevSecOps-docker'
+    command: 'login'
+
 - script: |
     export DOCKER_HOST=unix:///var/run/docker.sock
     docker info
-  displayName: Validate Docker Host
+  displayName: 'Validate Docker host'
 
 - task: Docker@2
-  displayName: 'Build and Push Docker Image for EFR.PTMS.DASHBOARD'
+  displayName: 'Build and push Docker image'
   inputs:
-    containerRegistry: 'DevSecOps-docker'  # Name of the Docker service connection
+    containerRegistry: 'DevSecOps-docker'
     repository: 'Live-Face-Capture-SDK-$(Build.SourceBranchName)'
     command: 'buildAndPush'
     Dockerfile: '$(Pipeline.Workspace)/s/Dockerfile'
     buildContext: '$(Pipeline.Workspace)/s'
     tags: '$(LatestReleaseVersion)'
 
-# Notification Docker completion
 - script: |
-    webhookUrl="$(teamsWebhookUrl)"
-    text="Docker Image built and pushed successfully(Live-Face-Capture-SDK): Live-Face-Capture-SDK-$(Build.SourceBranchName)"
-    payload="{\"text\": \"$text\"}"
-    curl -H "Content-Type: application/json" -d "$payload" "$webhookUrl"
-  displayName: 'Notify: Docker Image built and pushed Successfully'
+    curl -H "Content-Type: application/json" \
+      -d "{\"text\": \"🐳 Docker image pushed: Live-Face-Capture-SDK @ $(Build.SourceBranchName) ($(LatestReleaseVersion))\"}" \
+      "$(teamsWebhookUrl)"
+  displayName: 'Notify: Docker image pushed'

@@ -5,7 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Face Capture</title>
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" /> -->
+  <link href="bootstrap.min.css" rel="stylesheet" />
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
@@ -127,7 +128,7 @@
   </div>
 
   <script type="module">
-    import LiveFaceCapture from "./dist/live-face-capture.esm.js";
+    import { default as LiveFaceCapture } from "./dist/live-face-capture.esm.js";
     import { decryptEnvelope } from "./src/crypto/envelope.js";
 
     // ---------------------------
@@ -269,7 +270,7 @@
         },
 
         style: {
-          vis: true,
+          vis: false,
           hole_height: 0.7,
           hole_width: 0.7,
           doc_color: "white",
@@ -315,3 +316,5 @@
   </script>
 </body>
 </html>
+
+

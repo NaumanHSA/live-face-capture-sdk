@@ -1,13 +1,9 @@
-// export function resolveMount(config) {
-//   if (config.containerId) {
-//     const el = document.getElementById(config.containerId);
-//     if (!el) throw new Error(`containerId '${config.containerId}' not found`);
-//     return el;
-//   }
-//   return document.body;
-// }
-
 export function resolveMount(config) {
+  if (config.containerId) {
+    const el = document.getElementById(config.containerId);
+    if (!el) throw new Error(`containerId '${config.containerId}' not found in DOM`);
+    return el;
+  }
   return document.body;
 }
 

@@ -1,13 +1,13 @@
 .root-container {
-  position: fixed;         /* ✅ was absolute */
-  inset: 0;                /* ✅ shorthand for top/left/right/bottom = 0 */
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 1);
-  z-index: 2147483647;     /* ✅ make sure it stays above host page */
+  z-index: 2147483647;
 }
 
 .root-container * {
@@ -16,14 +16,13 @@
 
 .btn-close {
     background-color: transparent;
-    color: #b68a35; 
-    font-size: 30px; 
+    color: var(--lfc-brand, #b68a35);
+    font-size: 30px;
     cursor: pointer;
     z-index: 999;
     border: none;
 }
 
-/* Full width for app container, with responsive scaling */
 .app-container {
     width: 100%;
     max-width: 600px;
@@ -71,7 +70,6 @@
 .loading-circle {
     width: 15%;
     aspect-ratio: 1 / 1;
-    /* Maintain a 1:1 aspect ratio */
     border: 5px solid rgba(255, 255, 255, 0.3);
     border-top: 5px solid #fff;
     border-radius: 50%;
@@ -82,8 +80,14 @@
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }
+}
+
+.lfc-brand-bar {
+    width: 100%;
+    height: 5%;
+    background-color: var(--lfc-brand, #b68a35);
+    overflow: hidden;
 }

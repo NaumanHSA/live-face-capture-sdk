@@ -36,10 +36,22 @@ export const config_default = {
   dec_key: null,
   encryption: null,
 
-  // NEW production knobs:
-  assetBaseUrl: null,          // e.g. "https://cdn.example.com/live-face-capture/"
-  containerId: null,           // host can provide mount div id
-  inferenceFps: 20,            // throttle
+  assetBaseUrl: null,
+  containerId: null,
+  inferenceFps: 20,
+  jpeg_quality: 0.92,
+  session_timeout_ms: 0,
+};
+
+export const messages_default = {
+  MULTIPLE_FACES: "Multiple faces detected",
+  FACE_OUT_OF_FRAME: "Face out of frame",
+  MOVE_CLOSER: "Move closer to the camera",
+  HOLD_STILL: "Hold still",
+  OPEN_EYES: "Look straight and open your eyes",
+  BLINK_NOW: "Please blink now",
+  NO_FACE: "No face detected",
+  LOADING: "Loading...",
 };
 
 export const styles_default = {
@@ -48,7 +60,9 @@ export const styles_default = {
   DOC_OPACITY: 0.8,
   HOLE_HEIGHT: 0.60,
   HOLE_WIDTH: 0.65,
-  FACE_COLOR_SUCESS: "#32CD32",
+  FACE_COLOR_SUCCESS: "#32CD32",
   FACE_COLOR_FAIL: "#FF5733",
   FONT_SIZE: null,
+  BRAND_COLOR: "#b68a35",
+  LOGO_URL: null,
 };

@@ -9,7 +9,6 @@ import { computeCameraConstraints, startCamera, stopStream } from "../camera/cam
 import { createFaceLandmarker } from "../vision/faceLandmarker.js";
 import { createBlinkDetector } from "../util/blink.js";
 import { createLivenessLoop } from "../loop/livenessLoop.js";
-// import { generateSecretExecutionData } from "../encryption.js"; // keep your existing module
 import { encryptEnvelope } from "../crypto/envelope.js";
 
 export class Session {
@@ -80,16 +79,30 @@ export class Session {
                 );
             }
 
-            // close button
+            // Apply brand color via CSS custom property on the root.
+            if (this.config.BRAND_COLOR) {
+                this.root.style.setProperty("--lfc-brand", this.config.BRAND_COLOR);
+            }
+
+            // Close button
             const closeBtn = $("#btn-close");
             if (closeBtn) closeBtn.addEventListener("click", () => this.close());
 
-            // logo
+            // Logo — shown only when logo_url is explicitly provided.
             const logo = $("#logo");
-            if (logo) logo.src = assetUrl(this.config, "assets/media/uaemoi-logo.svg");
+            if (logo) {
+                if (this.config.LOGO_URL) {
+                    logo.src = this.config.LOGO_URL;
+                    logo.style.display = "";
+                } else {
+                    logo.style.display = "none";
+                }
+            }
 
             // loading screen
             const loading = $("#loading-screen");
+            const loadingText = $("#loading-text");
+            if (loadingText) loadingText.textContent = this.config.messages.LOADING;
             if (loading) loading.style.display = "flex";
 
             // ---- create landmarker ----
@@ -131,6 +144,7 @@ export class Session {
                 faceLandmarker: this.faceLandmarker,
                 blinkDetector,
                 encryptFrame: this.config.encrypt ? encryptFrame : null,
+                workerUrl: assetUrl(this.config, "vis-worker.js"),
                 onCapture: async (payload) => {
                     // Snapshot callbacks/config BEFORE close() can null them
                     const cfg = this.config;
