@@ -128,8 +128,7 @@
   </div>
 
   <script type="module">
-    import { default as LiveFaceCapture } from "./dist/live-face-capture.esm.js";
-    import { decryptEnvelope } from "./src/crypto/envelope.js";
+    import { default as LiveFaceCapture, decryptEnvelope } from "./dist/live-face-capture.esm.js";
 
     // ---------------------------
     // Demo RSA keygen (WebCrypto)
@@ -255,7 +254,7 @@
 
     // v2 token check
     const isV2Token = (s) => typeof s === "string" && s.startsWith("v2.");
-    
+
     btnStart.addEventListener("click", () => {
       if (encrypt && (!PUBLIC_KEY_PEM || !PRIVATE_KEY_PEM)) {
         alert("Encryption is ON but keys are not ready yet.");

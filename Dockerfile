@@ -1,32 +1,25 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18.16.1 as build
+# Stage 1: Build
+FROM node:20.17.0-alpine AS build
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json into the working directory
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code into the working directory
 COPY . .
-
-# Build the project using Rollup
 RUN npm run build
 
-# Stage 2: Use a lightweight Nginx image to serve the app
+# Stage 2: Serve — only ship what the browser needs
 FROM nginx:alpine
 
-# Copy the built Angular app from the previous stage
-COPY --from=build /app /usr/share/nginx/html
+# Drop the default nginx config and use ours
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80 (default for HTTP)
+# Copy only the files the browser actually fetches
+COPY --from=build /app/dist         /usr/share/nginx/html/dist
+COPY --from=build /app/index.html   /usr/share/nginx/html/index.html
+COPY --from=build /app/bootstrap.min.css /usr/share/nginx/html/bootstrap.min.css
+
 EXPOSE 80
-
-# Start the Nginx server
 CMD ["nginx", "-g", "daemon off;"]
-#docker build -t ssms-dashboard-web .
-#docker save -o ssms-dashboard-web.tar ssms-dashboard-web
-# docker load -i ssms-dashboard-web.tar
