@@ -92,7 +92,14 @@ export function drawHole(root, videoElement, config, borderColor, message) {
 
   ctx.restore(); // remove oval clip
 
-  // ── 4. Instruction message — centered just below the gradient zone ────────
+  // ── 4. Thin oval border ───────────────────────────────────────────────────
+  ctx.beginPath();
+  ctx.ellipse(centerX, centerY, ovalWidth / 2, ovalHeight / 2, 0, 0, 2 * Math.PI);
+  ctx.strokeStyle = withAlpha(borderColor, 0.75);
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // ── 5. Instruction message — centered just below the gradient zone ────────
   const fontSize = config.FONT_SIZE || Math.round(H * 0.028);
   ctx.font = `600 ${fontSize}px Arial, sans-serif`;
   ctx.textAlign = "center";
