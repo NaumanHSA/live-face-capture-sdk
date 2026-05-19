@@ -5,8 +5,8 @@ import { getEAR } from "../util/blink.js";
 import { ErrorCode, makeError } from "../util/errors.js";
 
 // Pre-allocated landmark objects — reused every frame to eliminate GC pressure.
-// MediaPipe Face Mesh always returns exactly 468 landmarks indexed 0–467.
-const LM_COUNT = 468;
+// FaceLandmarker Tasks API returns 478 landmarks (468 mesh + 10 iris points).
+const LM_COUNT = 478;
 const lmBuf = new Array(LM_COUNT);
 for (let i = 0; i < LM_COUNT; i++) lmBuf[i] = { x: 0, y: 0, z: 0 };
 
@@ -62,7 +62,7 @@ export function createLivenessLoop(ctx) {
     }
 
     function populateLmBuf(rawLandmarks, W, H, isFrontCamera) {
-        for (let i = 0; i < rawLandmarks.length; i++) {
+        for (let i = 0; i < rawLandmarks.length && i < LM_COUNT; i++) {
             const p = rawLandmarks[i];
             const xPx = toPixelX(p.x, W);
             const yPx = toPixelY(p.y, H);
