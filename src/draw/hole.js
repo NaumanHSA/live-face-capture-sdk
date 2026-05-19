@@ -5,8 +5,11 @@ let _lastH = 0;
 let _lastOval = null;
 
 export function drawHole(root, videoElement, config, borderColor, message) {
-  const W = videoElement.videoWidth;
-  const H = videoElement.videoHeight;
+  // Use the element's CSS display dimensions so the canvas pixel space
+  // matches 1:1 with what's rendered — avoids oval distortion when the
+  // native camera resolution has a different aspect ratio than the container.
+  const W = videoElement.offsetWidth || videoElement.videoWidth;
+  const H = videoElement.offsetHeight || videoElement.videoHeight;
 
   if (
     _lastColor === borderColor &&

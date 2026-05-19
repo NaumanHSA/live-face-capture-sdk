@@ -98,8 +98,14 @@ export function createLivenessLoop(ctx) {
 
             const results = faceLandmarker.detectForVideo(videoElement, now);
 
+            // Native resolution — used only for captureImage (full-quality output).
             const W = videoElement.videoWidth;
             const H = videoElement.videoHeight;
+            // Display dimensions — the canvas pixel space must match these so the
+            // oval and landmarks are not distorted when camera aspect ratio differs
+            // from the container aspect ratio (e.g. landscape camera, portrait view).
+            const displayW = videoElement.offsetWidth || W;
+            const displayH = videoElement.offsetHeight || H;
 
             if (sessionStart === null) sessionStart = now;
             if (stTime === null) stTime = now;
@@ -118,22 +124,23 @@ export function createLivenessLoop(ctx) {
                     return;
                 }
 
-                // Select the largest detected face.
+                // Select the largest detected face. Use display dims for bbox so
+                // it lives in the same coordinate space as the hole canvas.
                 const face = results.faceLandmarks.reduce((largest, lm) => {
-                    const bbox = getFaceRect(lm, W, H);
+                    const bbox = getFaceRect(lm, displayW, displayH);
                     const area = bbox.width * bbox.height;
                     if (!largest || area > largest.area) return { landmarks: lm, bbox, area };
                     return largest;
                 }, null);
 
-                // Populate pre-allocated buffer — zero heap allocation.
-                populateLmBuf(face.landmarks, W, H, isFrontCamera);
+                // Populate pre-allocated buffer in display coordinate space.
+                populateLmBuf(face.landmarks, displayW, displayH, isFrontCamera);
 
                 if (isFrontCamera) {
                     const x1 = face.bbox.x1;
                     const x2 = face.bbox.x2;
-                    face.bbox.x1 = W - x2;
-                    face.bbox.x2 = W - x1;
+                    face.bbox.x1 = displayW - x2;
+                    face.bbox.x2 = displayW - x1;
                 }
 
                 if (!hole) hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, "");
@@ -142,9 +149,8 @@ export function createLivenessLoop(ctx) {
                     lmBuf,
                     config.indices.FACE_OVAL,
                     hole,
-                    videoElement.offsetWidth,
-                    videoElement.offsetHeight,
-                    W, H,
+                    displayW, displayH,
+                    displayW, displayH,
                     face.bbox,
                     config.fc_ar_thresh
                 );
@@ -194,13 +200,13 @@ export function createLivenessLoop(ctx) {
                 }
 
                 if (config.VIS && visRenderer) {
-                    visRenderer.draw(lmBuf, LM_COUNT, face.bbox, W, H);
+                    visRenderer.draw(lmBuf, LM_COUNT, face.bbox, displayW, displayH);
                 }
             } else {
                 hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, config.messages.NO_FACE);
                 stTime = now;
                 capturedImage = null;
-                if (config.VIS && visRenderer) visRenderer.clear(W, H);
+                if (config.VIS && visRenderer) visRenderer.clear(displayW, displayH);
             }
         } catch (err) {
             onError(err);

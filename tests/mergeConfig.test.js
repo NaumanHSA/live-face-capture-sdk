@@ -50,10 +50,10 @@ describe("mergeConfig", () => {
     expect(out.containerId).toBeNull();
   });
 
-  it("uses dark semi-transparent overlay defaults", async () => {
+  it("uses white semi-transparent overlay defaults", async () => {
     const out = await mergeConfig({});
-    expect(out.DOC_COLOR).toBe("#000000");
-    expect(out.DOC_OPACITY).toBe(0.6);
+    expect(out.DOC_COLOR).toBe("#FFFFFF");
+    expect(out.DOC_OPACITY).toBe(0.72);
   });
 
   it("applies jpeg_quality and session_timeout_ms", async () => {

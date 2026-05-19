@@ -56,8 +56,8 @@ export const messages_default = {
 
 export const styles_default = {
   VIS: true,
-  DOC_COLOR: "#000000",
-  DOC_OPACITY: 0.6,
+  DOC_COLOR: "#FFFFFF",
+  DOC_OPACITY: 0.72,
   HOLE_HEIGHT: 0.60,
   HOLE_WIDTH: 0.65,
   FACE_COLOR_SUCCESS: "#32CD32",

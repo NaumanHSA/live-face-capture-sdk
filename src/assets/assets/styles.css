@@ -25,13 +25,6 @@
     overflow: hidden;
 }
 
-/* Desktop / tablet: center a portrait-width panel so it doesn't look stretched */
-@media (min-width: 600px) {
-    .app-container {
-        max-width: 480px;
-        border-radius: 12px;
-    }
-}
 
 /* ── Video container fills the app container ──────────────────────────────── */
 .video-container {
