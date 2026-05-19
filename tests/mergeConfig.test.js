@@ -50,12 +50,10 @@ describe("mergeConfig", () => {
     expect(out.containerId).toBeNull();
   });
 
-  it("applies brand_color and logo_url from style", async () => {
-    const out = await mergeConfig({
-      style: { brand_color: "#ff0000", logo_url: "https://example.com/logo.png" },
-    });
-    expect(out.BRAND_COLOR).toBe("#ff0000");
-    expect(out.LOGO_URL).toBe("https://example.com/logo.png");
+  it("uses dark semi-transparent overlay defaults", async () => {
+    const out = await mergeConfig({});
+    expect(out.DOC_COLOR).toBe("#000000");
+    expect(out.DOC_OPACITY).toBe(0.6);
   });
 
   it("applies jpeg_quality and session_timeout_ms", async () => {

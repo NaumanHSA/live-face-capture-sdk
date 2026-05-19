@@ -40,8 +40,6 @@ export async function mergeConfig(config_user) {
     FACE_COLOR_SUCCESS: "face_color_success",
     FACE_COLOR_FAIL: "face_color_fail",
     FONT_SIZE: "font_size",
-    BRAND_COLOR: "brand_color",
-    LOGO_URL: "logo_url",
   };
 
   const out = {};

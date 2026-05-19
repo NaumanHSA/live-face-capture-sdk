@@ -57,7 +57,6 @@ export class Session {
             }
 
             // ---- assets injection (once) ----
-            injectStylesheetOnce(assetUrl(this.config, "assets/bootstrap.min.css"), "bootstrap");
             injectStylesheetOnce(assetUrl(this.config, "assets/bootstrap-icons.min.css"), "icons");
             injectStylesheetOnce(assetUrl(this.config, "assets/styles.css"), "sdk");
 
@@ -79,25 +78,9 @@ export class Session {
                 );
             }
 
-            // Apply brand color via CSS custom property on the root.
-            if (this.config.BRAND_COLOR) {
-                this.root.style.setProperty("--lfc-brand", this.config.BRAND_COLOR);
-            }
-
             // Close button
             const closeBtn = $("#btn-close");
             if (closeBtn) closeBtn.addEventListener("click", () => this.close());
-
-            // Logo — shown only when logo_url is explicitly provided.
-            const logo = $("#logo");
-            if (logo) {
-                if (this.config.LOGO_URL) {
-                    logo.src = this.config.LOGO_URL;
-                    logo.style.display = "";
-                } else {
-                    logo.style.display = "none";
-                }
-            }
 
             // loading screen
             const loading = $("#loading-screen");
@@ -117,12 +100,9 @@ export class Session {
             this.isFrontCamera = isFrontCamera;
 
             // Canvases remain unmirrored so text isn't flipped.
-            this.videoEl.className = isFrontCamera ? "camera-view camera-view-front p-0" : "camera-view p-0";
-            this.canvasVis.className = "canvas p-0";
-            this.holeCanvas.className = "canvas p-0";
-
-            // Mark for any helper that wants to locate it (optional)
-            this.holeCanvas.dataset.lfc = "holeCanvas";
+            this.videoEl.className = isFrontCamera ? "camera-view camera-view-front" : "camera-view";
+            this.canvasVis.className = "canvas";
+            this.holeCanvas.className = "canvas";
 
             this.stream = await startCamera(this.videoEl, constraints);
 
