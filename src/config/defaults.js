@@ -44,14 +44,14 @@ export const config_default = {
 };
 
 export const messages_default = {
-  MULTIPLE_FACES: "Multiple faces detected",
-  FACE_OUT_OF_FRAME: "Face out of frame",
-  MOVE_CLOSER: "Move closer to the camera",
-  HOLD_STILL: "Hold still",
-  OPEN_EYES: "Look straight and open your eyes",
-  BLINK_NOW: "Please blink now",
-  NO_FACE: "No face detected",
-  LOADING: "Loading...",
+  MULTIPLE_FACES: "One face only — step back",
+  FACE_OUT_OF_FRAME: "Center your face in the oval",
+  MOVE_CLOSER: "Move closer",
+  HOLD_STILL: "Hold still...",
+  OPEN_EYES: "Open your eyes",
+  BLINK_NOW: "Blink now!",
+  NO_FACE: "Place your face in the oval",
+  LOADING: "Preparing camera...",
 };
 
 export const styles_default = {
