@@ -102,62 +102,81 @@ _loadFaceImg();
 
 // ── Animation icons ───────────────────────────────────────────────────────────
 
+// Bezier control ratios derived from the SVG outline path:
+//   M(0,15.09) C(0,16.33)(5.14,24.18)(14.93,24.18) ... (almond/vesica shape)
+// Centered at (0,0), half-width=1, half-height=1:
+//   CP_X = 9.798/14.935 = 0.656  CP_Y = 1.245/9.089 = 0.137
+function _blinkEye(ctx, cx, cy, ew, eh) {
+  const X = 0.656, Y = 0.137;
+  ctx.moveTo(cx - ew, cy);
+  ctx.bezierCurveTo(cx - ew, cy + eh * Y, cx - ew * X, cy + eh, cx, cy + eh);
+  ctx.bezierCurveTo(cx + ew * X, cy + eh, cx + ew, cy + eh * Y, cx + ew, cy);
+  ctx.bezierCurveTo(cx + ew, cy - eh * Y, cx + ew * X, cy - eh, cx, cy - eh);
+  ctx.bezierCurveTo(cx - ew * X, cy - eh, cx - ew, cy - eh * Y, cx - ew, cy);
+  ctx.closePath();
+}
+
 function drawBlinkIcon(ctx, now, cx, cy, size) {
-  const CYCLE = 2200;
+  const CYCLE = 4000;
   const t = (now % CYCLE) / CYCLE;
 
-  // Hold open → snap closed → snap open → hold open
-  let openness;
-  if      (t < 0.40) openness = 1;
-  else if (t < 0.48) openness = 1 - (t - 0.40) / 0.08;  // closing
-  else if (t < 0.56) openness = (t - 0.48) / 0.08;       // opening
-  else               openness = 1;
-  openness = Math.max(openness, 0);
+  // Lid position: 0 = open, 1 = closed (matches SVG blink keyframes)
+  let lidT = 0;
+  if      (t < 0.25) lidT = 0;
+  else if (t < 0.32) lidT = (t - 0.25) / 0.07;
+  else if (t < 0.40) lidT = 1;
+  else if (t < 0.48) lidT = 1 - (t - 0.40) / 0.08;
+
+  // Subtle squeeze on the eye body during blink (matches SVG squeeze keyframes)
+  let sqY = 1, sqDy = 0;
+  if (t >= 0.38 && t <= 0.48) {
+    const s = t < 0.42 ? (t - 0.38) / 0.04 : 1 - (t - 0.42) / 0.06;
+    sqY  = 1 - 0.25 * s;
+    sqDy = size * 0.025 * s;
+  }
 
   ctx.save();
+
+  const sep = size * 0.9;
+  const ew  = size * 0.5;
+  const eh  = ew * 0.608 * sqY;  // SVG aspect ratio (half-height / half-width) × squeeze
+  const ecy = cy + sqDy;
+  const lw  = Math.max(1.5, size * 0.055);
+
+  ctx.fillStyle   = "rgba(255,255,255,0.92)";
   ctx.strokeStyle = "rgba(255,255,255,0.92)";
-  ctx.lineWidth   = Math.max(1.5, size * 0.07);
+  ctx.lineWidth   = lw;
   ctx.lineCap     = "round";
-  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
   ctx.shadowBlur  = 5;
 
-  const sep   = size * 0.34;  // distance between eye centres
-  const rx    = size * 0.24;  // half eye width
-  const ryMax = size * 0.16;  // max eye height (fully open)
+  for (const ex of [cx - sep / 2, cx + sep / 2]) {
+    // Compound fill via evenodd: sclera (outer) → iris hole → pupil re-fill
+    // Matches SVG compound path structure (outer CW + iris CCW winding = ring).
+    ctx.beginPath();
+    _blinkEye(ctx, ex, ecy, ew, eh);
+    ctx.ellipse(ex, ecy, ew * 0.468, ew * 0.468 * sqY, 0, 0, Math.PI * 2);
+    ctx.ellipse(ex, ecy, ew * 0.222, ew * 0.222 * sqY, 0, 0, Math.PI * 2);
+    ctx.fill("evenodd");
 
-  for (const ex of [cx - sep, cx + sep]) {
-    if (openness < 0.05) {
-      // Fully closed — single horizontal stroke
+    // Eye outline stroke
+    ctx.beginPath();
+    _blinkEye(ctx, ex, ecy, ew, eh);
+    ctx.stroke();
+
+    // Upper eyelid sweeps downward (clipped inside the eye shape)
+    if (lidT > 0) {
+      ctx.save();
+      ctx.shadowBlur = 0;
       ctx.beginPath();
-      ctx.moveTo(ex - rx, cy);
-      ctx.lineTo(ex + rx, cy);
-      ctx.stroke();
-    } else {
-      const curveUp   = ryMax * openness;
-      const curveDown = ryMax * 0.38 * openness; // lower lid is shallower
-
-      // Almond-shaped eye: upper lid arcs up, lower lid arcs down
-      ctx.beginPath();
-      ctx.moveTo(ex - rx, cy);
-      ctx.quadraticCurveTo(ex, cy - curveUp,   ex + rx, cy);
-      ctx.quadraticCurveTo(ex, cy + curveDown, ex - rx, cy);
-      ctx.closePath();
-      ctx.stroke();
-
-      // Iris — fades in as the eye opens, sits slightly under the upper lid
-      if (openness > 0.35) {
-        const irisAlpha = Math.min(1, (openness - 0.35) / 0.45);
-        const irisR     = Math.min(curveUp, curveUp + curveDown) * 0.44;
-        const irisY     = cy - curveUp * 0.18;
-        ctx.save();
-        ctx.globalAlpha = irisAlpha * 0.85;
-        ctx.beginPath();
-        ctx.arc(ex, irisY, irisR, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
+      _blinkEye(ctx, ex, ecy, ew, eh);
+      ctx.clip();
+      ctx.fillStyle = "rgba(255,255,255,0.93)";
+      ctx.fillRect(ex - ew - 1, ecy - eh - 1, ew * 2 + 2, (2 * eh + 2) * lidT);
+      ctx.restore();
     }
   }
+
   ctx.restore();
 }
 
