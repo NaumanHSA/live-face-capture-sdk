@@ -177,7 +177,7 @@ export function createLivenessLoop(ctx) {
                         return;
                     }
 
-                    hole = drawHole(root, videoElement, config, result.color, result.message);
+                    hole = drawHole(root, videoElement, config, result.color, result.message, result.animation ?? null, now);
                 }
 
                 if (config.VIS && visRenderer) {

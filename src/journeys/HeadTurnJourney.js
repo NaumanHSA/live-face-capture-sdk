@@ -65,7 +65,7 @@ export function createHeadTurnJourney(config) {
                     turnStart = null;
                 }
                 if (state === STATE.LOOK_LEFT) {
-                    return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.LOOK_LEFT };
+                    return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.LOOK_LEFT, animation: "look_left" };
                 }
             }
 
@@ -79,7 +79,7 @@ export function createHeadTurnJourney(config) {
             } else {
                 turnStart = null;
             }
-            return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.LOOK_RIGHT };
+            return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.LOOK_RIGHT, animation: "look_right" };
         },
     };
 }

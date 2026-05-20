@@ -36,7 +36,7 @@ export function createBlinkJourney(config) {
             if (blinkDetector(lmBuf)) {
                 return { running: false, frame: capturedFrame };
             }
-            return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.BLINK_NOW };
+            return { running: true, color: config.FACE_COLOR_SUCCESS, message: config.messages.BLINK_NOW, animation: "blink" };
         },
     };
 }
