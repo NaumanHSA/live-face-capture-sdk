@@ -140,10 +140,13 @@
   </div>
 
   <script type="module">
-    import { default as LiveFaceCapture } from "./src/index.js";
+    // Use the compiled bundle — src/ is never shipped to the browser.
+    // For local development swap to: import { default as LiveFaceCapture } from "./src/index.js";
+    import { default as LiveFaceCapture } from "./dist/live-face-capture.esm.js";
 
     // ── Config ────────────────────────────────────────────────────────────────
-    // Change this to your server address if running remotely.
+    // LOCAL DEV : "http://localhost:8000"
+    // PRODUCTION: your deployed server URL, e.g. "https://api.yourdomain.com"
     const SERVER = "http://localhost:8000";
 
     // ── Kick off WASM compilation immediately (before user clicks Start) ──────
