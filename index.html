@@ -31,38 +31,32 @@
 
     .feature p { color: #666; line-height: 1.5; font-size: 14px; }
 
-    /* --- key panel --- */
-    .keys-panel { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; text-align: left; }
+    /* --- server status panel --- */
+    .server-panel { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; text-align: left; }
 
-    .keys-panel h5 { margin-bottom: .75rem; color: #333; }
+    .server-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .4rem; }
 
-    .keys-panel pre {
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 6px;
-      padding: .75rem;
-      font-size: 11px;
-      max-height: 180px;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
+    .server-label { font-size: 13px; color: #333; font-weight: 500; }
+
+    .pill {
+      font-size: 12px; padding: .2rem .6rem; border-radius: 999px;
+      background: #f3f3f3; color: #444; font-weight: 500;
     }
-
-    .keys-actions {
-      display: flex;
-      gap: .75rem;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: .75rem;
-    }
+    .pill.ok   { background: #e6f9ee; color: #1a7a3c; }
+    .pill.err  { background: #fdecea; color: #b71c1c; }
+    .pill.busy { background: #fff8e1; color: #8a6800; }
 
     .small-note { font-size: 12px; color: #666; margin-top: .25rem; }
 
-    .pill { font-size: 12px; padding: .2rem .5rem; border-radius: 999px; background: #f3f3f3; color: #444; }
-
-    .switch-wrap { display: flex; align-items: center; gap: .5rem; }
-    .switch-label { font-size: 13px; color: #333; font-weight: 500; }
+    /* liveness result */
+    .result-box {
+      margin-top: 1rem; padding: .75rem 1rem; border-radius: 6px;
+      border: 1px solid #eee; background: #fafafa; display: none;
+    }
+    .result-box.pass { border-color: #a5d6b0; background: #f0fbf3; }
+    .result-box.fail { border-color: #f5b8b4; background: #fff5f5; }
+    .result-title { font-weight: 600; font-size: 15px; margin-bottom: .25rem; }
+    .result-detail { font-size: 12px; color: #555; }
   </style>
 </head>
 
@@ -91,33 +85,22 @@
         </div>
       </div>
 
-      <!-- ✅ Keys / Encryption Panel -->
-      <div class="keys-panel">
-        <div class="keys-actions">
-          <div class="switch-wrap">
-            <div class="switch-label">Encryption (Demo)</div>
-            <div class="custom-control custom-switch">
-              <input type="checkbox" class="custom-control-input" id="encrypt_switch">
-              <label class="custom-control-label" for="encrypt_switch"></label>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:.5rem; align-items:center;">
-            <span id="keys_status" class="pill">keys: not generated</span>
-            <span class="pill">encrypt: <b id="enc_mode">off</b></span>
-          </div>
+      <!-- Server / Encryption Status Panel -->
+      <div class="server-panel">
+        <div class="server-row">
+          <span class="server-label">Liveness Server</span>
+          <span id="srv_status" class="pill busy">connecting…</span>
+          <span id="enc_pill"   class="pill">encrypt: off</span>
+        </div>
+        <div class="small-note" id="srv_note">
+          Fetching RSA public key from <code id="srv_url_display"></code>
         </div>
 
-        <div class="small-note">
-          Toggle ON generates an RSA key pair in-browser (demo only) and decrypts the frame locally.
-          Production: keep private key on server.
+        <!-- Result shown after capture -->
+        <div id="liveness_result" class="result-box">
+          <div class="result-title" id="result_title"></div>
+          <div class="result-detail" id="result_detail"></div>
         </div>
-
-        <h5 class="mt-3">Public Key (SDK uses this)</h5>
-        <pre id="pub_out">Encryption is OFF</pre>
-
-        <h5 class="mt-3">Private Key (demo decrypt only)</h5>
-        <pre id="pri_out">Encryption is OFF</pre>
       </div>
     </div>
 
@@ -128,164 +111,93 @@
   </div>
 
   <script type="module">
-    // import { default as LiveFaceCapture, decryptEnvelope } from "./dist/live-face-capture.esm.js";
-    import { default as LiveFaceCapture, decryptEnvelope } from "./src/index.js";
+    import { default as LiveFaceCapture } from "./src/index.js";
 
-    // Kick off WASM download + compilation in the background immediately.
-    // By the time the user clicks Start the 8 MB runtime is already compiled.
+    // ── Config ────────────────────────────────────────────────────────────────
+    // Change this to your server address if running remotely.
+    const SERVER = "http://localhost:8000";
+
+    // ── Kick off WASM compilation immediately (before user clicks Start) ──────
     LiveFaceCapture.preload();
 
-    // ---------------------------
-    // Demo RSA keygen (WebCrypto)
-    // ---------------------------
-    const u8ToB64 = (u8) => {
-      let s = "";
-      for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
-      return btoa(s);
-    };
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const btnStart      = document.getElementById("example_button");
+    const srvStatus     = document.getElementById("srv_status");
+    const encPill       = document.getElementById("enc_pill");
+    const srvNote       = document.getElementById("srv_note");
+    const srvUrlDisplay = document.getElementById("srv_url_display");
+    const resultBox     = document.getElementById("liveness_result");
+    const resultTitle   = document.getElementById("result_title");
+    const resultDetail  = document.getElementById("result_detail");
 
-    function wrapPem(b64, type) {
-      const lines = b64.match(/.{1,64}/g) || [];
-      return `-----BEGIN ${type}-----\n${lines.join("\n")}\n-----END ${type}-----`;
-    }
+    srvUrlDisplay.textContent = SERVER;
 
-    async function exportPublicKeyPem(publicKey) {
-      const spki = new Uint8Array(await crypto.subtle.exportKey("spki", publicKey));
-      return wrapPem(u8ToB64(spki), "PUBLIC KEY");
-    }
-
-    async function exportPrivateKeyPem(privateKey) {
-      const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", privateKey));
-      return wrapPem(u8ToB64(pkcs8), "PRIVATE KEY");
-    }
-
-    async function generateRsaKeyPairPem() {
-      const kp = await crypto.subtle.generateKey(
-        {
-          name: "RSA-OAEP",
-          modulusLength: 2048,
-          publicExponent: new Uint8Array([1, 0, 1]),
-          hash: "SHA-256",
-        },
-        true,
-        ["encrypt", "decrypt"]
-      );
-      return {
-        publicPem: await exportPublicKeyPem(kp.publicKey),
-        privatePem: await exportPrivateKeyPem(kp.privateKey),
-      };
-    }
-
-    // ---------------------------
-    // UI + state
-    // ---------------------------
-    let encrypt = false;
+    // ── State ─────────────────────────────────────────────────────────────────
     let PUBLIC_KEY_PEM = null;
-    let PRIVATE_KEY_PEM = null;
 
-    const btnStart = document.getElementById("example_button");
-    const sw = document.getElementById("encrypt_switch");
-    const status = document.getElementById("keys_status");
-    const encMode = document.getElementById("enc_mode");
-    const pubOut = document.getElementById("pub_out");
-    const priOut = document.getElementById("pri_out");
+    function setServerStatus(state, note) {
+      srvStatus.className = `pill ${state}`;
+      srvStatus.textContent = { ok: "connected", err: "offline", busy: "connecting…" }[state];
+      if (note) srvNote.textContent = note;
+    }
 
-    function setEncryptUI(on) {
-      encrypt = !!on;
-      encMode.textContent = encrypt ? "on" : "off";
+    // ── Fetch public key from server ──────────────────────────────────────────
+    btnStart.disabled = true;
 
-      if (!encrypt) {
-        PUBLIC_KEY_PEM = null;
-        PRIVATE_KEY_PEM = null;
-        status.textContent = "keys: not generated";
-        pubOut.textContent = "Encryption is OFF";
-        priOut.textContent = "Encryption is OFF";
+    async function fetchPublicKey() {
+      try {
+        const res = await fetch(`${SERVER}/api/v1/key`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { key } = await res.json();
+        PUBLIC_KEY_PEM = key;
+        setServerStatus("ok", `Public key fetched from ${SERVER}/api/v1/key`);
+        encPill.textContent = "encrypt: on";
+        encPill.classList.add("ok");
+        btnStart.disabled = false;
+      } catch (err) {
+        setServerStatus("err", `Could not reach server at ${SERVER} — ${err.message}`);
+        encPill.textContent = "encrypt: off";
+        console.error("Key fetch failed:", err);
       }
     }
 
-    // initial state
-    setEncryptUI(false);
+    fetchPublicKey();
 
-    // Toggle behavior:
-    // ON  -> generate keys
-    // OFF -> clear keys
-    sw.addEventListener("change", async () => {
-      if (!sw.checked) {
-        setEncryptUI(false);
-        return;
-      }
-
-      // Turn ON: generate keys
-      setEncryptUI(true);
-      status.textContent = "keys: generating...";
-      pubOut.textContent = "Generating...";
-      priOut.textContent = "Generating...";
-
-      try {
-        const { publicPem, privatePem } = await generateRsaKeyPairPem();
-        PUBLIC_KEY_PEM = publicPem;
-        PRIVATE_KEY_PEM = privatePem;
-
-        pubOut.textContent = PUBLIC_KEY_PEM;
-        priOut.textContent = PRIVATE_KEY_PEM;
-        status.textContent = "keys: ready";
-      } catch (e) {
-        console.error(e);
-        status.textContent = "keys: failed";
-        pubOut.textContent = "Key generation failed";
-        priOut.textContent = "Key generation failed";
-        // revert switch
-        sw.checked = false;
-        setEncryptUI(false);
-      }
-    });
-
-    // Pre-flight camera permission prompt (optional UX nicety).
-    // navigator.mediaDevices is only available on HTTPS or localhost.
-    // Over plain HTTP from a remote host it is undefined — guard it.
+    // ── Camera guard ──────────────────────────────────────────────────────────
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-      console.warn(
-        "Camera API unavailable: page must be served over HTTPS (or localhost). " +
-        "Current origin:", location.origin
-      );
       btnStart.disabled = true;
       btnStart.title = "Camera requires HTTPS";
       btnStart.textContent = "HTTPS required for camera access";
     } else {
-      await navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => stream.getTracks().forEach((t) => t.stop()))
-        .catch(() => {}); // user may deny; SDK will handle it on open()
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then((s) => s.getTracks().forEach((t) => t.stop()))
+        .catch(() => {});
     }
 
-    // v2 token check
-    const isV2Token = (s) => typeof s === "string" && s.startsWith("v2.");
+    // ── Show liveness result ──────────────────────────────────────────────────
+    function showResult(passed, score, message) {
+      resultBox.style.display = "block";
+      resultBox.className     = `result-box ${passed ? "pass" : "fail"}`;
+      resultTitle.textContent = passed ? "✓ Liveness Passed" : "✗ Liveness Failed";
+      resultDetail.textContent = `Score: ${(score * 100).toFixed(1)}%  •  ${message}`;
+    }
 
+    // ── Start button ──────────────────────────────────────────────────────────
     btnStart.addEventListener("click", () => {
-      if (encrypt && (!PUBLIC_KEY_PEM || !PRIVATE_KEY_PEM)) {
-        alert("Encryption is ON but keys are not ready yet.");
-        return;
-      }
+      resultBox.style.display = "none";
 
       LiveFaceCapture.open({
         config: {
-          // "blink" | "head_turn" | "random" (random picks one per session)
-          journey: "random",
-
+          journey: "random",            // "blink" | "head_turn" | "random"
           is_front_camera: true,
           allow_multiple_faces: false,
           max_camera_res: 1920,
-
-          // Milliseconds the face must stay centered before the action step starts
           time_to_blink: 2000,
-
           min_face_detection_conf: 0.5,
-          // Fraction of oval area the face must occupy (0–1)
           face_area_thres: 0.35,
-
-          // Head-turn journey: yaw offset threshold (fraction of inter-eye distance)
           head_turn_thresh: 0.12,
 
-          encrypt,
+          encrypt: !!PUBLIC_KEY_PEM,
           enc_key: PUBLIC_KEY_PEM,
           encryption: { alg: "A256GCM" },
         },
@@ -297,31 +209,46 @@
         },
 
         onCaptureComplete: async (results) => {
-          console.log("SDK results:", results);
-          console.log("best_frame:", results.best_frame);
-          console.log("parts:", String(results.best_frame).split(".").length);
+          console.log("Capture complete:", results);
+          const token = results?.best_frame;
 
-          const imgPrev = document.getElementById("preview");
-          const frame = results?.best_frame;
+          // ── Send encrypted token to liveness server ─────────────────────────
+          setServerStatus("busy", "Sending to liveness server…");
+          try {
+            const res = await fetch(`${SERVER}/api/v1/liveness`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token }),
+            });
 
-          if (encrypt) {
-            if (!isV2Token(frame)) {
-              console.error("Expected v2 token, got:", frame);
-              alert("Encrypt is ON, but SDK did not return a v2 token. (Your SDK is still outputting legacy format)");
-              return;
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.detail || `HTTP ${res.status}`);
             }
-            const base64 = await decryptEnvelope(frame, PRIVATE_KEY_PEM);
-            imgPrev.src = base64;
-          } else {
-            imgPrev.src = frame;
+
+            const { liveness } = await res.json();
+            setServerStatus("ok", `Response received from ${SERVER}/api/v1/liveness`);
+            showResult(liveness.passed, liveness.score, liveness.message);
+
+            // Also show the preview image (server decrypted; we just show
+            // the raw token for a quick frame preview using the SDK helper)
+            const imgPrev = document.getElementById("preview");
+            imgPrev.src = "";   // token is encrypted — no local preview without private key
+          } catch (err) {
+            setServerStatus("err", `Liveness request failed: ${err.message}`);
+            showResult(false, 0, err.message);
+            console.error("Liveness error:", err);
           }
 
           document.getElementById("preview-container").style.display = "flex";
           document.getElementById("main").style.display = "none";
         },
 
-        onError: console.error,
-        onClose: () => console.log("Everything Shutdown..."),
+        onError: (err) => {
+          console.error("SDK error:", err);
+          setServerStatus("err", `SDK error: ${err.message}`);
+        },
+        onClose: () => console.log("Session closed."),
       });
     });
 
