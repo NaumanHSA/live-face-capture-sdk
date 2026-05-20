@@ -267,21 +267,25 @@
 
       LiveFaceCapture.open({
         config: {
-          journey: "head_turn",
+          // "blink" | "head_turn" | "random" (random picks one per session)
+          journey: "random",
+
           is_front_camera: true,
-          camera_id: 0,
           allow_multiple_faces: false,
           max_camera_res: 1920,
-          time_to_blink: 1500,
+
+          // Milliseconds the face must stay centered before the action step starts
+          time_to_blink: 2000,
+
           min_face_detection_conf: 0.5,
-          face_area_thres: 0.3,
-          pitch_thresh: 30,
-          yaw_thresh: 30,
-          roll_thresh: 30,
-          blink_eye_frames: 3,
+          // Fraction of oval area the face must occupy (0–1)
+          face_area_thres: 0.35,
+
+          // Head-turn journey: yaw offset threshold (fraction of inter-eye distance)
+          head_turn_thresh: 0.12,
 
           encrypt,
-          enc_key: PUBLIC_KEY_PEM,          // only set when encrypt=true
+          enc_key: PUBLIC_KEY_PEM,
           encryption: { alg: "A256GCM" },
         },
 
