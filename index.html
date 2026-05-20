@@ -57,6 +57,23 @@
     .result-box.fail { border-color: #f5b8b4; background: #fff5f5; }
     .result-title { font-weight: 600; font-size: 15px; margin-bottom: .25rem; }
     .result-detail { font-size: 12px; color: #555; }
+
+    /* --- journey selector --- */
+    .journey-group { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin: 1.25rem 0 .5rem; }
+
+    .journey-group input[type="radio"] { display: none; }
+
+    .journey-group label {
+      padding: .45rem 1.1rem; border-radius: 999px; border: 1.5px solid #ddd;
+      font-size: 13px; font-weight: 500; color: #555; cursor: pointer;
+      transition: all .2s;
+    }
+
+    .journey-group input[type="radio"]:checked + label {
+      background: #b68a34; border-color: #b68a34; color: #fff;
+    }
+
+    .journey-group label:hover { border-color: #b68a34; color: #b68a34; }
   </style>
 </head>
 
@@ -68,6 +85,18 @@
       <button id="example_button" class="start-button" style="justify-content: center;">
         Start Verification
       </button>
+
+      <!-- Journey selector -->
+      <div class="journey-group">
+        <input type="radio" name="journey" id="j_random"    value="random"    checked>
+        <label for="j_random">Random</label>
+
+        <input type="radio" name="journey" id="j_blink"     value="blink">
+        <label for="j_blink">Blink</label>
+
+        <input type="radio" name="journey" id="j_headturn"  value="head_turn">
+        <label for="j_headturn">Head Turn</label>
+      </div>
 
       <div class="features">
         <div class="feature">
@@ -186,9 +215,11 @@
     btnStart.addEventListener("click", () => {
       resultBox.style.display = "none";
 
+      const journey = document.querySelector('input[name="journey"]:checked').value;
+
       LiveFaceCapture.open({
         config: {
-          journey: "random",            // "blink" | "head_turn" | "random"
+          journey,
           is_front_camera: true,
           allow_multiple_faces: false,
           max_camera_res: 1920,
