@@ -12,6 +12,12 @@ export function createBlinkJourney(config) {
             blinkDetector = createBlinkDetector(config);
         },
 
+        // Strict oval fit is only required while waiting for the initial hold.
+        // Once the frame is captured we relax — the user isn't moving their head.
+        needsFullFit() {
+            return capturedFrame === null;
+        },
+
         tick({ lmBuf, config, now, captureImage, isFrontCamera }) {
             if (stTime === null) stTime = now;
             const elapsed = now - stTime;

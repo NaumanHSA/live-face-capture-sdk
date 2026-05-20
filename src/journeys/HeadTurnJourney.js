@@ -29,6 +29,13 @@ export function createHeadTurnJourney(config) {
             baselineYaw = null;
         },
 
+        // Strict oval fit is only required during the initial hold phase.
+        // During look-left / look-right the head naturally drifts outside the
+        // oval, so we only require that MediaPipe can still detect the face.
+        needsFullFit() {
+            return state === STATE.HOLDING;
+        },
+
         tick({ lmBuf, config, now, captureImage, isFrontCamera }) {
             if (stTime === null) stTime = now;
 

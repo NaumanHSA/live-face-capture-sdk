@@ -128,21 +128,32 @@ export function createLivenessLoop(ctx) {
 
                 if (!hole) hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, "");
 
-                const fit = isFaceFit(
-                    lmBuf,
-                    config.indices.FACE_OVAL,
-                    hole,
-                    displayW, displayH,
-                    displayW, displayH,
-                    face.bbox,
-                    config.fc_ar_thresh
-                );
+                // Strict oval fit is only enforced during the initial hold phase.
+                // Once the journey moves to an action step (look left/right, blink)
+                // we only require MediaPipe to detect the face — the user's head will
+                // naturally drift outside the oval while turning.
+                const strict = journey.needsFullFit();
+                let outOfPosition = false;
 
-                if (fit !== 0) {
-                    const msg = fit === 1 ? config.messages.FACE_OUT_OF_FRAME : config.messages.MOVE_CLOSER;
-                    hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, msg);
-                    journey.reset();
-                } else {
+                if (strict) {
+                    const fit = isFaceFit(
+                        lmBuf,
+                        config.indices.FACE_OVAL,
+                        hole,
+                        displayW, displayH,
+                        displayW, displayH,
+                        face.bbox,
+                        config.fc_ar_thresh
+                    );
+                    if (fit !== 0) {
+                        const msg = fit === 1 ? config.messages.FACE_OUT_OF_FRAME : config.messages.MOVE_CLOSER;
+                        hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, msg);
+                        journey.reset();
+                        outOfPosition = true;
+                    }
+                }
+
+                if (!outOfPosition) {
                     const result = journey.tick({ lmBuf, config, now, captureImage, isFrontCamera });
 
                     if (!result.running) {

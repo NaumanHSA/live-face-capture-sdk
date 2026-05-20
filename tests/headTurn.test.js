@@ -149,6 +149,33 @@ describe("createHeadTurnJourney", () => {
     });
 });
 
+describe("needsFullFit", () => {
+    it("HeadTurnJourney requires strict fit only during HOLDING", () => {
+        const journey = createHeadTurnJourney(config);
+        const lm = makeLmBuf();
+        expect(journey.needsFullFit()).toBe(true);        // HOLDING
+        journey.tick(tickCtx(lm, 0));
+        expect(journey.needsFullFit()).toBe(true);        // still HOLDING
+        journey.tick(tickCtx(lm, config.c2bt + 1));      // → LOOK_LEFT
+        expect(journey.needsFullFit()).toBe(false);       // relaxed
+    });
+
+    it("HeadTurnJourney reverts to strict fit after reset", () => {
+        const journey = createHeadTurnJourney(config);
+        const lm = makeLmBuf();
+        journey.tick(tickCtx(lm, 0));
+        journey.tick(tickCtx(lm, config.c2bt + 1));      // → LOOK_LEFT
+        expect(journey.needsFullFit()).toBe(false);
+        journey.reset();
+        expect(journey.needsFullFit()).toBe(true);        // back to strict
+    });
+
+    it("BlinkJourney requires strict fit until frame is captured", () => {
+        const journey = createBlinkJourney(config);
+        expect(journey.needsFullFit()).toBe(true);        // no frame yet
+    });
+});
+
 describe("selectJourney", () => {
     it("returns a BlinkJourney for journey='blink'", () => {
         const blinkConfig = { ...config, journey: "blink" };
