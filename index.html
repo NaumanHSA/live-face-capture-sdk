@@ -174,22 +174,25 @@
     }
 
     // ── Fetch public key from server ──────────────────────────────────────────
+    // Failure is non-fatal: SDK opens without encryption and liveness check is skipped.
     btnStart.disabled = true;
 
     async function fetchPublicKey() {
       try {
-        const res = await fetch(`${SERVER}/api/v1/key`);
+        const res = await fetch(`${SERVER}/api/v1/key`, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { key } = await res.json();
         PUBLIC_KEY_PEM = key;
-        setServerStatus("ok", `Public key fetched from ${SERVER}/api/v1/key`);
+        setServerStatus("ok", `Liveness server connected — encryption enabled`);
         encPill.textContent = "encrypt: on";
         encPill.classList.add("ok");
-        btnStart.disabled = false;
       } catch (err) {
-        setServerStatus("err", `Could not reach server at ${SERVER} — ${err.message}`);
+        console.warn("Liveness server unreachable:", err.message);
+        setServerStatus("err", `Liveness server offline — running without encryption`);
         encPill.textContent = "encrypt: off";
-        console.error("Key fetch failed:", err);
+        // SDK still works; liveness check will be skipped in onCaptureComplete
+      } finally {
+        btnStart.disabled = false;   // always enable — SDK works without a server
       }
     }
 
@@ -244,34 +247,45 @@
 
         onCaptureComplete: async (results) => {
           console.log("Capture complete:", results);
-          const token = results?.best_frame;
+          const frame = results?.best_frame;
+          const imgPrev = document.getElementById("preview");
 
-          // ── Send encrypted token to liveness server ─────────────────────────
-          setServerStatus("busy", "Sending to liveness server…");
-          try {
-            const res = await fetch(`${SERVER}/api/v1/liveness`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token }),
-            });
+          if (!PUBLIC_KEY_PEM) {
+            // ── Server was offline — no encryption, skip liveness check ─────────
+            console.warn("Liveness server offline — showing raw frame, no liveness check.");
+            imgPrev.src = frame;
+            resultBox.style.display = "block";
+            resultBox.className     = "result-box";
+            resultTitle.textContent = "⚠ Liveness server offline";
+            resultDetail.textContent = "Capture succeeded. Liveness check skipped — server unreachable.";
+          } else {
+            // ── Send encrypted token to liveness server ───────────────────────
+            imgPrev.src = "";   // frame is encrypted; no local preview
+            setServerStatus("busy", "Sending to liveness server…");
+            try {
+              const res = await fetch(`${SERVER}/api/v1/liveness`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: frame }),
+                signal: AbortSignal.timeout(15000),
+              });
 
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({}));
-              throw new Error(err.detail || `HTTP ${res.status}`);
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.detail || `HTTP ${res.status}`);
+              }
+
+              const { liveness } = await res.json();
+              setServerStatus("ok", `Response received from liveness server`);
+              showResult(liveness.passed, liveness.score, liveness.message);
+            } catch (err) {
+              console.error("Liveness request failed:", err);
+              setServerStatus("err", `Liveness request failed — ${err.message}`);
+              resultBox.style.display = "block";
+              resultBox.className     = "result-box";
+              resultTitle.textContent = "⚠ Liveness check failed";
+              resultDetail.textContent = err.message;
             }
-
-            const { liveness } = await res.json();
-            setServerStatus("ok", `Response received from ${SERVER}/api/v1/liveness`);
-            showResult(liveness.passed, liveness.score, liveness.message);
-
-            // Also show the preview image (server decrypted; we just show
-            // the raw token for a quick frame preview using the SDK helper)
-            const imgPrev = document.getElementById("preview");
-            imgPrev.src = "";   // token is encrypted — no local preview without private key
-          } catch (err) {
-            setServerStatus("err", `Liveness request failed: ${err.message}`);
-            showResult(false, 0, err.message);
-            console.error("Liveness error:", err);
           }
 
           document.getElementById("preview-container").style.display = "flex";
