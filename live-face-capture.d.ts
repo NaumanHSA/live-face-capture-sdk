@@ -42,6 +42,8 @@ export interface MessagesConfig {
   HOLD_STILL?: string;
   OPEN_EYES?: string;
   BLINK_NOW?: string;
+  LOOK_LEFT?: string;
+  LOOK_RIGHT?: string;
   NO_FACE?: string;
   LOADING?: string;
 }
@@ -96,6 +98,16 @@ export interface SDKConfig {
   jpeg_quality?: number;
   /** Session auto-timeout in milliseconds. `0` = disabled. Default: `0`. */
   session_timeout_ms?: number;
+  /**
+   * Liveness journey to use. `"random"` picks one at runtime.
+   * Default: `"blink"`.
+   */
+  journey?: "blink" | "head_turn" | "random";
+  /**
+   * Yaw offset threshold (as a fraction of inter-eye distance) that triggers
+   * a head-turn detection in the `head_turn` journey. Default: `0.12`.
+   */
+  head_turn_thresh?: number;
 }
 
 export interface SDKStyle {
@@ -115,10 +127,6 @@ export interface SDKStyle {
   face_color_fail?: string;
   /** Overlay message font size (px). `null` = auto-scale. Default: `null`. */
   font_size?: number | null;
-  /** Brand accent color (close button, bottom bar). Default: `"#b68a35"`. */
-  brand_color?: string;
-  /** Logo URL. Pass `null` to hide the logo row entirely. Default: `null`. */
-  logo_url?: string | null;
 }
 
 export interface SDKOptions {
@@ -137,6 +145,8 @@ export interface LiveFaceCaptureInstance {
   open(options: SDKOptions): Promise<void>;
   close(): Promise<boolean>;
   getState(): SDKState;
+  /** Warm the MediaPipe WASM cache before the user opens the SDK. */
+  preload(config?: Partial<SDKConfig>): Promise<void>;
 }
 
 /**

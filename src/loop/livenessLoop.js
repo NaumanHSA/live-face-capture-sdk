@@ -1,7 +1,7 @@
 import { getFaceRect, isFaceFit } from "../util/geometry.js";
 import { createVisRenderer } from "../draw/visRenderer.js";
 import { drawHole, resetHoleDirtyState } from "../draw/hole.js";
-import { getEAR } from "../util/blink.js";
+import { selectJourney } from "../journeys/index.js";
 import { ErrorCode, makeError } from "../util/errors.js";
 
 // Pre-allocated landmark objects — reused every frame to eliminate GC pressure.
@@ -17,32 +17,25 @@ export function createLivenessLoop(ctx) {
         canvasElement,
         config,
         faceLandmarker,
-        blinkDetector,
         encryptFrame,
         onCapture,
         onError,
         workerUrl,
     } = ctx;
 
-    let lastVideoTime = -1;
-    let stTime = null;
-    let capturedImage = null;
     let hole = null;
-
     let rafId = null;
     let lastInferMs = 0;
+    let lastVideoTime = -1;
     let busy = false;
     const minMs = Math.max(10, Math.floor(1000 / (config.inferenceFps || 20)));
 
-    // Session timeout (0 = disabled).
     const timeoutMs = config.session_timeout_ms || 0;
     let sessionStart = null;
 
-    // Vis renderer — worker-backed when OffscreenCanvas is available.
     let visRenderer = null;
+    const journey = selectJourney(config);
 
-    // Inlined coordinate conversion — avoids the [x,y] array allocation that
-    // the old normalized_to_pixel_coordinates() returned on every call.
     function toPixelX(n, W) { return n < 0 || n > 1 ? -1 : Math.min(Math.floor(n * W), W - 1); }
     function toPixelY(n, H) { return n < 0 || n > 1 ? -1 : Math.min(Math.floor(n * H), H - 1); }
 
@@ -88,7 +81,6 @@ export function createLivenessLoop(ctx) {
             }
             lastInferMs = now;
 
-            // Skip inference when the video hasn't decoded a new frame yet.
             const currentTime = videoElement.currentTime;
             if (currentTime === lastVideoTime) {
                 rafId = requestAnimationFrame(() => tick(isFrontCamera));
@@ -98,17 +90,12 @@ export function createLivenessLoop(ctx) {
 
             const results = faceLandmarker.detectForVideo(videoElement, now);
 
-            // Native resolution — used only for captureImage (full-quality output).
             const W = videoElement.videoWidth;
             const H = videoElement.videoHeight;
-            // Display dimensions — the canvas pixel space must match these so the
-            // oval and landmarks are not distorted when camera aspect ratio differs
-            // from the container aspect ratio (e.g. landscape camera, portrait view).
             const displayW = videoElement.offsetWidth || W;
             const displayH = videoElement.offsetHeight || H;
 
             if (sessionStart === null) sessionStart = now;
-            if (stTime === null) stTime = now;
 
             if (timeoutMs > 0 && now - sessionStart >= timeoutMs) {
                 onError(makeError(ErrorCode.SESSION_TIMEOUT, "Session timed out"));
@@ -118,14 +105,11 @@ export function createLivenessLoop(ctx) {
             if (results.faceLandmarks && results.faceLandmarks.length > 0) {
                 if (!config.multi_fces && results.faceLandmarks.length > 1) {
                     hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, config.messages.MULTIPLE_FACES);
-                    stTime = now;
-                    capturedImage = null;
+                    journey.reset();
                     rafId = requestAnimationFrame(() => tick(isFrontCamera));
                     return;
                 }
 
-                // Select the largest detected face. Use display dims for bbox so
-                // it lives in the same coordinate space as the hole canvas.
                 const face = results.faceLandmarks.reduce((largest, lm) => {
                     const bbox = getFaceRect(lm, displayW, displayH);
                     const area = bbox.width * bbox.height;
@@ -133,7 +117,6 @@ export function createLivenessLoop(ctx) {
                     return largest;
                 }, null);
 
-                // Populate pre-allocated buffer in display coordinate space.
                 populateLmBuf(face.landmarks, displayW, displayH, isFrontCamera);
 
                 if (isFrontCamera) {
@@ -158,45 +141,32 @@ export function createLivenessLoop(ctx) {
                 if (fit !== 0) {
                     const msg = fit === 1 ? config.messages.FACE_OUT_OF_FRAME : config.messages.MOVE_CLOSER;
                     hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, msg);
-                    stTime = now;
-                    capturedImage = null;
+                    journey.reset();
                 } else {
-                    hole = drawHole(root, videoElement, config, config.FACE_COLOR_SUCCESS, config.messages.HOLD_STILL);
-                    const elapsed = now - stTime;
+                    const result = journey.tick({ lmBuf, config, now, captureImage, isFrontCamera });
 
-                    if (elapsed >= config.c2bt) {
-                        if (!capturedImage) {
-                            const ear = getEAR(lmBuf, config);
-                            if (ear >= 0.25) {
-                                capturedImage = captureImage(isFrontCamera);
-                            } else {
-                                hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, config.messages.OPEN_EYES);
-                            }
-                        } else {
-                            hole = drawHole(root, videoElement, config, config.FACE_COLOR_SUCCESS, config.messages.BLINK_NOW);
-
-                            if (blinkDetector(lmBuf)) {
-                                busy = true;
-                                if (rafId) cancelAnimationFrame(rafId);
-                                rafId = null;
-                                const bbox = { ...face.bbox };
-                                const frame = capturedImage;
-                                queueMicrotask(() => {
-                                    (async () => {
-                                        try {
-                                            const best = (config.encrypt && encryptFrame)
-                                                ? await encryptFrame(frame)
-                                                : frame;
-                                            await onCapture({ face_bbox: bbox, best_frame: best });
-                                        } finally {
-                                            busy = false;
-                                        }
-                                    })();
-                                });
-                                return;
-                            }
-                        }
+                    if (!result.running) {
+                        busy = true;
+                        if (rafId) cancelAnimationFrame(rafId);
+                        rafId = null;
+                        const bbox = { ...face.bbox };
+                        const frame = result.frame;
+                        queueMicrotask(() => {
+                            (async () => {
+                                try {
+                                    const best = (config.encrypt && encryptFrame)
+                                        ? await encryptFrame(frame)
+                                        : frame;
+                                    await onCapture({ face_bbox: bbox, best_frame: best });
+                                } finally {
+                                    busy = false;
+                                }
+                            })();
+                        });
+                        return;
                     }
+
+                    hole = drawHole(root, videoElement, config, result.color, result.message);
                 }
 
                 if (config.VIS && visRenderer) {
@@ -204,14 +174,12 @@ export function createLivenessLoop(ctx) {
                 }
             } else {
                 hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, config.messages.NO_FACE);
-                stTime = now;
-                capturedImage = null;
+                journey.reset();
                 if (config.VIS && visRenderer) visRenderer.clear(displayW, displayH);
             }
         } catch (err) {
             onError(err);
-            stTime = performance.now();
-            capturedImage = null;
+            journey.reset();
         }
 
         rafId = requestAnimationFrame(() => tick(isFrontCamera));

@@ -36,6 +36,9 @@ export const config_default = {
   dec_key: null,
   encryption: null,
 
+  journey: "blink",
+  head_turn_thresh: 0.12,
+
   assetBaseUrl: null,
   containerId: null,
   inferenceFps: 20,
@@ -50,6 +53,8 @@ export const messages_default = {
   HOLD_STILL: "Hold still...",
   OPEN_EYES: "Open your eyes",
   BLINK_NOW: "Blink now!",
+  LOOK_LEFT: "Look left",
+  LOOK_RIGHT: "Look right",
   NO_FACE: "Place your face in the oval",
   LOADING: "Preparing camera...",
 };

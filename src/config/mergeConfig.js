@@ -25,6 +25,8 @@ export async function mergeConfig(config_user) {
     enc_key: "enc_key",
     dec_key: "dec_key",
     encrypt: "encrypt",
+    journey: "journey",
+    head_turn_thresh: "head_turn_thresh",
     assetBaseUrl: "assetBaseUrl",
     inferenceFps: "inferenceFps",
     jpeg_quality: "jpeg_quality",
@@ -47,6 +49,7 @@ export async function mergeConfig(config_user) {
   for (const k in mapS) out[k] = (mapS[k] in s) ? s[mapS[k]] : styles_default[k];
 
   out.containerId = c.containerId ?? null;
+  out.encryption = c.encryption ?? config_default.encryption;
 
   // Merge messages: user-supplied keys override defaults, others fall back.
   const userMessages = config_user?.messages ?? {};

@@ -7,7 +7,6 @@ import { injectStylesheetOnce } from "../assets/inject.js";
 import { fetchText } from "../assets/template.js";
 import { computeCameraConstraints, startCamera, stopStream } from "../camera/camera.js";
 import { createFaceLandmarker } from "../vision/faceLandmarker.js";
-import { createBlinkDetector } from "../util/blink.js";
 import { createLivenessLoop } from "../loop/livenessLoop.js";
 import { encryptEnvelope } from "../crypto/envelope.js";
 
@@ -112,8 +111,6 @@ export class Session {
             if (loading) loading.style.display = "none";
 
             // ---- liveness loop ----
-            const blinkDetector = createBlinkDetector(this.config);
-
             const encryptFrame = (base64) => encryptEnvelope(base64, this.config.enc_key, {
                 alg: this.config.encryption?.alg || "A256GCM",
                 version: "v2",
@@ -125,7 +122,6 @@ export class Session {
                 canvasElement: this.canvasVis,
                 config: this.config,
                 faceLandmarker: this.faceLandmarker,
-                blinkDetector,
                 encryptFrame: this.config.encrypt ? encryptFrame : null,
                 workerUrl: assetUrl(this.config, "vis-worker.js"),
                 onCapture: async (payload) => {
