@@ -137,8 +137,8 @@ function drawBlinkIcon(ctx, now, cx, cy, size) {
 
   ctx.save();
 
-  const sep = size * 0.9;
-  const ew  = size * 0.5;
+  const sep = size * 1.2;
+  const ew  = size * 0.44;
   const eh  = ew * 0.608 * sqY;  // SVG aspect ratio (half-height / half-width) × squeeze
   const ecy = cy + sqDy;
   const lw  = Math.max(1.5, size * 0.055);
