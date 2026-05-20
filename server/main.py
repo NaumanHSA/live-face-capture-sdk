@@ -151,3 +151,8 @@ def _liveness_check(frame_b64: str) -> dict:
         "score": round(score, 3),
         "message": f"Liveness passed (stub) — frame {size_kb:.1f} KB",
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

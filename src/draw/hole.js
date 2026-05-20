@@ -176,7 +176,6 @@ function drawBlinkIcon(ctx, now, cx, cy, size) {
       ctx.restore();
     }
   }
-
   ctx.restore();
 }
 
