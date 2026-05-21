@@ -31,6 +31,10 @@ export async function mergeConfig(config_user) {
     inferenceFps: "inferenceFps",
     jpeg_quality: "jpeg_quality",
     session_timeout_ms: "session_timeout_ms",
+    face_attr:             "face_attr",
+    face_attr_precision:   "face_attr_precision",
+    face_attr_interval_ms:   "face_attr_interval_ms",
+    face_attr_threshold:     "face_attr_threshold",
   };
 
   const mapS = {

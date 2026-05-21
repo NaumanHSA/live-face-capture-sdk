@@ -224,6 +224,205 @@ function drawLookIcon(ctx, now, cx, cy, size, dir) {
   ctx.restore();
 }
 
+// ── Occlusion placeholder icons ───────────────────────────────────────────────
+// These are canvas-drawn placeholders until real PNGs are supplied.
+// All share the same call signature: (ctx, now, cx, cy, size)
+
+function _pulse(now, speed) {
+  return 0.88 + 0.12 * Math.sin(now * speed);
+}
+
+function drawFaceMaskIcon(ctx, now, cx, cy, size) {
+  ctx.save();
+  const p = _pulse(now, 0.004);
+  ctx.translate(cx, cy);
+  ctx.scale(p, p);
+  ctx.translate(-cx, -cy);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.92)";
+  ctx.fillStyle   = "rgba(255,255,255,0.92)";
+  ctx.lineWidth   = Math.max(1.5, size * 0.055);
+  ctx.lineCap     = "round";
+  ctx.lineJoin    = "round";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur  = 5;
+
+  // Face oval
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - size * 0.06, size * 0.42, size * 0.52, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Mask body — rounded rectangle covering nose + mouth
+  const mw = size * 0.64, mh = size * 0.36;
+  const my = cy + size * 0.08;
+  ctx.beginPath();
+  ctx.roundRect(cx - mw / 2, my - mh / 2, mw, mh, mh * 0.22);
+  ctx.fill();
+
+  // Two horizontal seam lines on the mask
+  ctx.strokeStyle = "rgba(30,30,30,0.3)";
+  ctx.lineWidth   = Math.max(1, size * 0.022);
+  ctx.shadowBlur  = 0;
+  for (let i = 1; i < 3; i++) {
+    const ly = my - mh / 2 + mh * (i / 3);
+    ctx.beginPath();
+    ctx.moveTo(cx - mw / 2 + mh * 0.12, ly);
+    ctx.lineTo(cx + mw / 2 - mh * 0.12, ly);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function _glassLens(ctx, cx, cy, hw, hh, rx) {
+  ctx.beginPath();
+  ctx.roundRect(cx - hw, cy - hh, hw * 2, hh * 2, rx);
+}
+
+function drawSunglassesIcon(ctx, now, cx, cy, size) {
+  ctx.save();
+  const p = _pulse(now, 0.003);
+  ctx.translate(cx, cy);
+  ctx.scale(p, p);
+  ctx.translate(-cx, -cy);
+
+  const lw   = Math.max(2, size * 0.07);
+  const hw   = size * 0.38;   // lens half-width
+  const hh   = size * 0.26;   // lens half-height
+  const sep  = size * 1.05;   // centre-to-centre
+  const rx   = hh * 0.35;     // corner radius
+  const by   = cy;
+
+  ctx.strokeStyle = "rgba(255,255,255,0.92)";
+  ctx.fillStyle   = "rgba(255,255,255,0.22)";  // tinted dark fill
+  ctx.lineWidth   = lw;
+  ctx.lineCap     = "round";
+  ctx.shadowColor = "rgba(0,0,0,0.45)";
+  ctx.shadowBlur  = 6;
+
+  // Left lens fill then stroke
+  _glassLens(ctx, cx - sep / 2, by, hw, hh, rx);
+  ctx.fill();
+  _glassLens(ctx, cx - sep / 2, by, hw, hh, rx);
+  ctx.stroke();
+
+  // Right lens fill then stroke
+  _glassLens(ctx, cx + sep / 2, by, hw, hh, rx);
+  ctx.fill();
+  _glassLens(ctx, cx + sep / 2, by, hw, hh, rx);
+  ctx.stroke();
+
+  // Bridge between lenses
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(cx - sep / 2 + hw, by - hh * 0.15);
+  ctx.lineTo(cx + sep / 2 - hw, by - hh * 0.15);
+  ctx.stroke();
+
+  // Temple arms
+  for (const sign of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + sign * (sep / 2 + hw), by);
+    ctx.lineTo(cx + sign * (sep / 2 + hw + size * 0.26), by + hh * 0.3);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawEyeglassesIcon(ctx, now, cx, cy, size) {
+  ctx.save();
+  const p = _pulse(now, 0.003);
+  ctx.translate(cx, cy);
+  ctx.scale(p, p);
+  ctx.translate(-cx, -cy);
+
+  const lw   = Math.max(1.5, size * 0.05);
+  const hw   = size * 0.36;
+  const hh   = size * 0.24;
+  const sep  = size * 1.0;
+  const rx   = hh * 0.22;
+  const by   = cy;
+
+  ctx.strokeStyle = "rgba(255,255,255,0.92)";
+  ctx.fillStyle   = "rgba(255,255,255,0.08)";
+  ctx.lineWidth   = lw;
+  ctx.lineCap     = "round";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur  = 5;
+
+  _glassLens(ctx, cx - sep / 2, by, hw, hh, rx);
+  ctx.fill();
+  _glassLens(ctx, cx - sep / 2, by, hw, hh, rx);
+  ctx.stroke();
+
+  _glassLens(ctx, cx + sep / 2, by, hw, hh, rx);
+  ctx.fill();
+  _glassLens(ctx, cx + sep / 2, by, hw, hh, rx);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(cx - sep / 2 + hw, by - hh * 0.1);
+  ctx.lineTo(cx + sep / 2 - hw, by - hh * 0.1);
+  ctx.stroke();
+
+  for (const sign of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + sign * (sep / 2 + hw), by);
+    ctx.lineTo(cx + sign * (sep / 2 + hw + size * 0.22), by + hh * 0.25);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawEyesClosedIcon(ctx, now, cx, cy, size) {
+  // Reuse the blink icon but lock eyelids fully closed (lidT = 1).
+  ctx.save();
+
+  const FLASH = 3000;
+  const ft = (now % FLASH) / FLASH;
+  const alpha = ft < 0.08 ? 0.55 + 0.45 * (ft / 0.08)
+              : ft < 0.5  ? 1
+              : ft < 0.58 ? 1 - 0.45 * ((ft - 0.5) / 0.08)
+              : 0.55;
+
+  ctx.globalAlpha = alpha;
+
+  const sep = size * 1.2;
+  const ew  = size * 0.44;
+  const eh  = ew * 0.608;
+  const lw  = Math.max(1.5, size * 0.055);
+
+  ctx.fillStyle   = "rgba(255,255,255,0.92)";
+  ctx.strokeStyle = "rgba(255,255,255,0.92)";
+  ctx.lineWidth   = lw;
+  ctx.lineCap     = "round";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur  = 5;
+
+  for (const ex of [cx - sep / 2, cx + sep / 2]) {
+    // Eye outline
+    ctx.beginPath();
+    _blinkEye(ctx, ex, cy, ew, eh);
+    ctx.stroke();
+
+    // Fully closed lid (lidT = 1 → fills entire eye)
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    _blinkEye(ctx, ex, cy, ew, eh);
+    ctx.clip();
+    ctx.fillStyle = "rgba(255,255,255,0.93)";
+    ctx.fillRect(ex - ew - 1, cy - eh - 1, ew * 2 + 2, (2 * eh + 2));
+    ctx.restore();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export function drawHole(root, videoElement, config, borderColor, message, animation = null, now = 0) {
@@ -306,9 +505,13 @@ export function drawHole(root, videoElement, config, borderColor, message, anima
   const iconY    = centerY - ovalHeight * 0.34;
 
   if (animation) {
-    if      (animation === "blink")      drawBlinkIcon(ctx, now, centerX, iconY, iconSize);
-    else if (animation === "look_left")  drawLookIcon (ctx, now, centerX, iconY, iconSize, -1);
-    else if (animation === "look_right") drawLookIcon (ctx, now, centerX, iconY, iconSize,  1);
+    if      (animation === "blink")            drawBlinkIcon      (ctx, now, centerX, iconY, iconSize);
+    else if (animation === "look_left")        drawLookIcon       (ctx, now, centerX, iconY, iconSize, -1);
+    else if (animation === "look_right")       drawLookIcon       (ctx, now, centerX, iconY, iconSize,  1);
+    else if (animation === "attr_face_mask")   drawFaceMaskIcon   (ctx, now, centerX, iconY, iconSize);
+    else if (animation === "attr_sunglasses")  drawSunglassesIcon (ctx, now, centerX, iconY, iconSize);
+    else if (animation === "attr_eyeglasses")  drawEyeglassesIcon (ctx, now, centerX, iconY, iconSize);
+    else if (animation === "attr_eyes_closed") drawEyesClosedIcon (ctx, now, centerX, iconY, iconSize);
   }
 
   if (message) {

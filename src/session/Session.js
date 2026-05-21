@@ -124,6 +124,24 @@ export class Session {
                 faceLandmarker: this.faceLandmarker,
                 encryptFrame: this.config.encrypt ? encryptFrame : null,
                 workerUrl: assetUrl(this.config, "vis-worker.js"),
+                faceAttrWorkerUrl: this.config.face_attr
+                    ? assetUrl(this.config, "face-attr-worker.js")
+                    : null,
+                faceAttrOrtUrl: this.config.face_attr
+                    ? assetUrl(this.config, "libs/onnxruntime-web/ort.min.js")
+                    : null,
+                faceAttrModelUrl: this.config.face_attr
+                    ? assetUrl(this.config, `models/${_faceAttrModelDir(this.config.face_attr_precision)}/face_attrib_net.onnx`)
+                    : null,
+                faceAttrExtDataUrl: this.config.face_attr
+                    ? assetUrl(this.config, `models/${_faceAttrModelDir(this.config.face_attr_precision)}/face_attrib_net.data`)
+                    : null,
+                faceAttrInputType: this.config.face_attr
+                    ? _faceAttrInputType(this.config.face_attr_precision)
+                    : null,
+                faceAttrInputScale: this.config.face_attr
+                    ? _faceAttrInputScale(this.config.face_attr_precision)
+                    : null,
                 onCapture: async (payload) => {
                     // Snapshot callbacks/config BEFORE close() can null them
                     const cfg = this.config;
@@ -203,6 +221,23 @@ export class Session {
         this.abort = null;
         this.config = null;
     }
+}
+
+const _FACE_ATTR_MODEL_DIRS = {
+    int8:  "face_attrib_net-onnx-w8a8",
+    float: "face_attrib_net-onnx-float",
+};
+
+function _faceAttrModelDir(precision) {
+    return _FACE_ATTR_MODEL_DIRS[precision] || _FACE_ATTR_MODEL_DIRS.int8;
+}
+
+function _faceAttrInputType(precision) {
+    return precision === "float" ? "float32" : "uint8";
+}
+
+function _faceAttrInputScale(precision) {
+    return precision === "float" ? "zero_to_one" : "zero_to_255";
 }
 
 function normalizeOpenError(err) {

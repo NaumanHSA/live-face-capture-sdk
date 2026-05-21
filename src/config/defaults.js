@@ -44,6 +44,16 @@ export const config_default = {
   inferenceFps: 20,
   jpeg_quality: 0.92,
   session_timeout_ms: 0,
+
+  // ── Face attribute detection (disabled by default) ────────────────────────
+  // Model + ort.js paths are resolved automatically from the asset base URL.
+  // Place files under: dist/libs/ort.min.js
+  //                    dist/models/face_attrib_net-onnx-w8a8/{.onnx, .data, metadata.json}
+  face_attr: false,
+  face_attr_precision: "int8",           // "int8"  → face_attrib_net-onnx-w8a8  (uint8  input, ~12 MB)
+                                         // "float" → face_attrib_net-onnx-fp32   (float32 input, ~40 MB)
+  face_attr_interval_ms: 1000,      // inference cadence while in HOLDING phase
+  face_attr_threshold: 0.5,         // confidence cutoff for mask/sunglasses/eyeglasses/eyes-closed
 };
 
 export const messages_default = {
@@ -57,6 +67,10 @@ export const messages_default = {
   LOOK_RIGHT: "Look right",
   NO_FACE: "Place your face in the oval",
   LOADING: "Preparing camera...",
+  FACE_MASK: "Please remove your face mask",
+  SUNGLASSES: "Please remove your sunglasses",
+  EYEGLASSES: "Please remove your glasses",
+  EYES_CLOSED: "Please open your eyes",
 };
 
 export const styles_default = {

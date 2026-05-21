@@ -3,6 +3,7 @@ import { createVisRenderer } from "../draw/visRenderer.js";
 import { drawHole, resetHoleDirtyState } from "../draw/hole.js";
 import { selectJourney } from "../journeys/index.js";
 import { ErrorCode, makeError } from "../util/errors.js";
+import { createFaceAttrChecker, labelToMessage, LABEL_ANIM } from "../faceAttr/faceAttr.js";
 
 // Pre-allocated landmark objects — reused every frame to eliminate GC pressure.
 // FaceLandmarker Tasks API returns 478 landmarks (468 mesh + 10 iris points).
@@ -21,6 +22,12 @@ export function createLivenessLoop(ctx) {
         onCapture,
         onError,
         workerUrl,
+        faceAttrWorkerUrl,
+        faceAttrOrtUrl,
+        faceAttrModelUrl,
+        faceAttrExtDataUrl,
+        faceAttrInputType,
+        faceAttrInputScale,
     } = ctx;
 
     let hole = null;
@@ -35,6 +42,17 @@ export function createLivenessLoop(ctx) {
 
     let visRenderer = null;
     const journey = selectJourney(config);
+
+    const faceAttrChecker = faceAttrWorkerUrl
+        ? createFaceAttrChecker(config, faceAttrWorkerUrl, {
+              ortUrl:      faceAttrOrtUrl,
+              modelUrl:    faceAttrModelUrl,
+              extDataUrl:  faceAttrExtDataUrl,
+              extDataPath: "face_attrib_net.data",
+              inputType:   faceAttrInputType,
+              inputScale:  faceAttrInputScale,
+          })
+        : null;
 
     function toPixelX(n, W) { return n < 0 || n > 1 ? -1 : Math.min(Math.floor(n * W), W - 1); }
     function toPixelY(n, H) { return n < 0 || n > 1 ? -1 : Math.min(Math.floor(n * H), H - 1); }
@@ -153,6 +171,20 @@ export function createLivenessLoop(ctx) {
                     }
                 }
 
+                // Face attribute check — only while in HOLDING (strict) phase.
+                // Blocks journey advancement until the occlusion is removed.
+                if (strict && faceAttrChecker) {
+                    const attrLabel = faceAttrChecker.check(videoElement, face.landmarks, now);
+                    if (attrLabel) {
+                        const msg  = labelToMessage(attrLabel, config.messages);
+                        const anim = LABEL_ANIM[attrLabel];
+                        hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, msg, anim, now);
+                        journey.reset();
+                        rafId = requestAnimationFrame(() => tick(isFrontCamera));
+                        return;
+                    }
+                }
+
                 if (!outOfPosition) {
                     const result = journey.tick({ lmBuf, config, now, captureImage, isFrontCamera });
 
@@ -210,6 +242,7 @@ export function createLivenessLoop(ctx) {
             rafId = null;
             visRenderer?.terminate();
             visRenderer = null;
+            faceAttrChecker?.stop();
         },
     };
 }

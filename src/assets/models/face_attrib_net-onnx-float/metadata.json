@@ -1,0 +1,40 @@
+{
+    "model_id": "face_attrib_net",
+    "model_name": "Facial-Attribute-Detection",
+    "runtime": "onnx",
+    "precision": "float",
+    "tool_versions": {
+        "qairt": "2.42.0.251225135753_193295",
+        "onnx_runtime": "1.24.3"
+    },
+    "model_files": {
+        "face_attrib_net.onnx": {
+            "inputs": {
+                "image": {
+                    "shape": [
+                        1,
+                        3,
+                        128,
+                        128
+                    ],
+                    "dtype": "float32",
+                    "io_type": "image",
+                    "image_metadata": {},
+                    "value_range": [
+                        0.0,
+                        1.0
+                    ]
+                }
+            },
+            "outputs": {
+                "probability": {
+                    "shape": [
+                        1,
+                        5
+                    ],
+                    "dtype": "float32"
+                }
+            }
+        }
+    }
+}

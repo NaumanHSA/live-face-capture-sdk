@@ -5,6 +5,8 @@ const copyPlugin = copy({
   targets: [
     { src: "src/assets/assets/*", dest: "dist/assets" },
     { src: "src/assets/libs/*", dest: "dist/libs" },
+    { src: "src/assets/models/face_attrib_net-onnx-w8a8/*", dest: "dist/models/face_attrib_net-onnx-w8a8" },
+    { src: "src/assets/models/face_attrib_net-onnx-float/*",  dest: "dist/models/face_attrib_net-onnx-float"  },
   ],
 });
 
@@ -23,6 +25,13 @@ export default [
   {
     input: "src/draw/visWorker.js",
     output: { file: "dist/vis-worker.js", format: "iife", sourcemap: false },
+    plugins: [terser()],
+  },
+
+  // Face attribute inference worker (IIFE — classic worker, loads ORT via importScripts)
+  {
+    input: "src/faceAttr/faceAttrWorker.js",
+    output: { file: "dist/face-attr-worker.js", format: "iife", sourcemap: false },
     plugins: [terser()],
   },
 ];
