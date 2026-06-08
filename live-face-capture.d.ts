@@ -1,4 +1,4 @@
-// TypeScript declarations for live-face-capture SDK v4
+// TypeScript declarations for live-face-capture SDK v4.1
 
 export declare const ErrorCode: {
   readonly INVALID_CONFIG: "INVALID_CONFIG";
@@ -46,6 +46,14 @@ export interface MessagesConfig {
   LOOK_RIGHT?: string;
   NO_FACE?: string;
   LOADING?: string;
+  /** Shown when a face mask is detected. Requires `face_attr: true`. */
+  FACE_MASK?: string;
+  /** Shown when sunglasses are detected. Requires `face_attr: true`. */
+  SUNGLASSES?: string;
+  /** Shown when eyeglasses are detected. Requires `face_attr: true`. */
+  EYEGLASSES?: string;
+  /** Shown when both eyes are closed. Requires `face_attr: true`. */
+  EYES_CLOSED?: string;
 }
 
 export interface SDKConfig {
@@ -108,6 +116,31 @@ export interface SDKConfig {
    * a head-turn detection in the `head_turn` journey. Default: `0.12`.
    */
   head_turn_thresh?: number;
+
+  // ── Face attribute detection ──────────────────────────────────────────────
+  /**
+   * Enable real-time face occlusion detection (mask, sunglasses, eyeglasses,
+   * eyes-closed) via an ONNX model running in a Web Worker.
+   * Default: `false`.
+   */
+  face_attr?: boolean;
+  /**
+   * ONNX model precision variant to load.
+   * `"int8"` → w8a8 quantised (~12 MB, faster).
+   * `"float"` → fp32 full precision (~40 MB, more accurate).
+   * Default: `"int8"`.
+   */
+  face_attr_precision?: "int8" | "float";
+  /**
+   * Confidence score cutoff (0–1) for all attribute classes.
+   * Default: `0.5`.
+   */
+  face_attr_threshold?: number;
+  /**
+   * How often (in milliseconds) inference runs during the HOLDING phase.
+   * Default: `1000`.
+   */
+  face_attr_interval_ms?: number;
 }
 
 export interface SDKStyle {
