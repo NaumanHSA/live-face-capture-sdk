@@ -5,9 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Face Capture</title>
-  <!-- <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" /> -->
   <link href="bootstrap.min.css" rel="stylesheet" />
-
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
 
@@ -141,13 +139,14 @@
 
   <script type="module">
     // Use the compiled bundle — src/ is never shipped to the browser.
-    // For local development swap to: import { default as LiveFaceCapture } from "./src/index.js";
+    // For local development swap to: 
+    // import { default as LiveFaceCapture } from "./src/index.js";
     import { default as LiveFaceCapture } from "./dist/live-face-capture.esm.js";
 
     // ── Config ────────────────────────────────────────────────────────────────
     // LOCAL DEV : "http://localhost:8000"
     // PRODUCTION: your deployed server URL, e.g. "https://api.yourdomain.com"
-    const SERVER = "http://localhost:8000";
+    const SERVER = "http://10.3.51.92:5001";
 
     // ── Kick off WASM compilation immediately (before user clicks Start) ──────
     LiveFaceCapture.preload();
@@ -179,7 +178,7 @@
 
     async function fetchPublicKey() {
       try {
-        const res = await fetch(`${SERVER}/api/v1/key`, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(`${SERVER}/api/Liveness/GetPublicToken`, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { key } = await res.json();
         PUBLIC_KEY_PEM = key;
@@ -233,6 +232,12 @@
           min_face_detection_conf: 0.5,
           face_area_thres: 0.35,
           head_turn_thresh: 0.12,
+          
+          // Face attribute detection is optional and can be toggled on/off
+          face_attr: true,      // enable face attribute detection (mask, glasses, eyes closed)
+          face_attr_precision: "float",   // "int8" (smaller, faster, less accurate) or "float" (larger, slower, more accurate)
+          face_attr_threshold: 0.9,
+          face_attr_interval_ms: 1000,
 
           encrypt: !!PUBLIC_KEY_PEM,
           enc_key: PUBLIC_KEY_PEM,
@@ -263,11 +268,11 @@
             imgPrev.src = "";   // frame is encrypted; no local preview
             setServerStatus("busy", "Sending to liveness server…");
             try {
-              const res = await fetch(`${SERVER}/api/v1/liveness`, {
+              const res = await fetch(`${SERVER}/api/Liveness/LivenessCheck`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: frame }),
-                signal: AbortSignal.timeout(15000),
+                signal: AbortSignal.timeout(30000),
               });
 
               if (!res.ok) {
@@ -288,8 +293,8 @@
             }
           }
 
-          document.getElementById("preview-container").style.display = "flex";
-          document.getElementById("main").style.display = "none";
+          // document.getElementById("preview-container").style.display = "flex";
+          // document.getElementById("main").style.display = "none";
         },
 
         onError: (err) => {
