@@ -1,218 +1,262 @@
 <div>
-<h1>Live Face Capture</h1>
+<h1>Live Face Capture SDK</h1>
 <br>
 
 <div align="center">
-  <img width="40%" src="./assets/demo.gif"></a>
+  <img width="40%" src="./assets/demo.gif">
 </div>
-<!-- ![demo](./assets/demo.gif) -->
 
 <h2>Overview</h2>
-This JavaScript library is designed to capture an optimal facial image for applications requiring precise, frontal, and upright face alignment. It is particularly useful in scenarios such as face recognition, gender and face expression analysis, and other tasks that depend on accurate facial positioning.
-
-The library ensures high-quality image capture by assessing two critical factors:
-
-1. Face distance from the camera.
-2. Real-time facial orientation, evaluated in three dimensions:
-    - Yaw: Rotation side-to-side.
-    - Pitch: Up-and-down tilt.
-    - Roll: Left-to-right tilt.
-    
-To enhance the reliability of captured images, the system also incorporates liveness detection based on the identification of natural actions like eye blinks to confirm the subject is a real person.
-
-<br>
-<!-- <div align="center">
-  <img width="80%" src="./assets/roll, pitch, yaw.jpg"></a>
-  <br>
-  Fig 1: Three different types of orientations along x-axis, y-axis and z-axis
-</div> -->
-
-![roll_pitch_yaw](./assets/roll_pitch_yaw.jpg)
-<br>
-
-
-<h2>Core Technology</h2>
-The solution is built on MediaPipe Face Mesh, a robust framework that maps 468 3D facial landmarks with high precision. These landmarks form the basis for estimating facial orientation and eyes blink detection.
-
-<h3>Key Features</h3>
-
-- <b>Orientation Estimation</b><br>
-The system calculates Pitch, Yaw, and Roll angles to determine the face’s position relative to the camera. The output values range from -90° to 90°, with 0° representing an ideal, perfectly aligned face.
-
-- <b>Liveness Detection</b><br>
-To ensure the face is genuine and not an image or mask, the system detects eye blinks in real time, reinforcing the capture’s authenticity.
-
-- <b>Face Distance</b><br>
-The system ensures the face is neither too far nor too close to the camera by analyzing the ratio between the face-oval area and the camera-hole area. This helps maintain a consistent and ideal distance for capturing high-quality images.
-
-- <b>Face Position</b><br>
-To ensure proper alignment, the system monitors whether the face is centered within the camera view. It checks if the face is drifting out of the camera-hole range, guaranteeing accurate placement in every capture.
-
-- <b>Visualization</b><br>
-A comprehensive visualization feature has been integrated to help track real-time orientation estimations. This allows users to adjust and align their faces effectively to meet the required thresholds.
+A JavaScript SDK for capturing high-quality, liveness-verified facial images in the browser. Built on MediaPipe Face Mesh, it enforces correct face alignment (pitch, yaw, roll), confirms subject presence through liveness challenges, detects face occlusions in real time, and returns an encrypted or plain JPEG frame ready for downstream processing.
 
 </div>
 
-<br>
+---
 
-## <div>Quick Start Examples</div>
+## What's New in v4.1.0
 
-<details open>
-<summary><h4><b>Build Library</b></h4></summary>
+| Feature | Description |
+|---|---|
+| **Face Attribute Detection** | ONNX Runtime Web worker detects face mask, sunglasses, eyeglasses, and closed eyes in real time during the HOLDING phase. Blocks journey advancement until the occlusion is removed. |
+| **Multi-Journey Liveness** | Three challenge modes: `blink`, `head_turn`, and `random` (randomly picks one per session). Configurable via the `journey` key. |
+| **Head-Turn Challenge** | Liveness verified by asking the user to look left then right. Sensitivity tunable via `head_turn_thresh`. |
+| **Liveness Server Integration** | Optional FastAPI backend — encrypted frames can be submitted server-side for additional scoring. SDK continues gracefully when the server is offline. |
+| **Session Timeout** | Auto-closes the session after a configurable idle period (`session_timeout_ms`). |
+| **Frame Encryption** | Captured JPEG can be AES-256-GCM encrypted before delivery to `onCaptureComplete` via `encrypt` + `enc_key`. |
+| **Preload API** | `preload()` warms up MediaPipe models before `open()` is called, eliminating first-open latency. |
+| **Configurable Inference FPS** | `inferenceFps` caps the landmark inference rate to balance accuracy vs. CPU usage. |
+
+---
+
+## Core Technology
+
+Built on **MediaPipe Face Mesh** — 468 3D facial landmarks used for orientation estimation, blink detection, and head-turn tracking. Face attribute inference runs in a dedicated **Web Worker** via **ONNX Runtime Web** so it never blocks the main thread.
+
+![roll_pitch_yaw](./assets/roll_pitch_yaw.jpg)
+
+---
+
+## Key Features
+
+- **Orientation Estimation** — Pitch, Yaw, Roll angles (−90° to +90°, 0° = perfect alignment)
+- **Liveness Detection** — Blink or head-turn challenge to confirm a live subject
+- **Face Attribute Detection** — Real-time ONNX inference for mask / sunglasses / eyeglasses / eyes-closed
+- **Face Distance** — Enforces minimum face-to-oval area ratio
+- **Face Position** — Detects if the face drifts outside the oval
+- **Visualization** — Live landmark overlay and bounding box on a canvas
+- **Encryption** — Optional AES-256-GCM frame encryption
+
+---
+
+## Quick Start
+
+### Build
 
 ```bash
-$ cd face-capture-library
-$ npm install
-$ npm run build
+npm install
+npm run build
 ```
 
-After successfull build, you can find `live-face-capture.js` and `live-face-capture.min.js` exported to `./dist` directory.
+Outputs to `dist/`: `live-face-capture.esm.js`, `live-face-capture.umd.js`, and worker scripts.
 
-</details>
+### Import
 
-
-<details open>
-<summary><h4><b>Import Library</b></h4></summary>
-
-```bash
-# import the library in html
-<script src="./dist/live-face-capture.min.js"></script>
-
-# import the library in javascript
-import LiveFaceCapture from "./dist/live-face-capture.min.js";
+```html
+<!-- UMD (plain HTML) -->
+<script src="./dist/live-face-capture.umd.js"></script>
 ```
 
-<summary><h4><b>Use Library</b></h4></summary>
+```js
+// ESM
+import { LiveFaceCapture } from "./dist/live-face-capture.esm.js";
+```
 
-```bash
-# get list of available camera devices
-const devices = await navigator.mediaDevices.enumerateDevices();
-const videoInputs = devices.filter(device => device.kind === "videoinput");
-console.log("Devices from Index:", videoInputs);
+### Usage
 
-# Use the library
-LiveFaceCapture.open({
+```js
+const sdk = new LiveFaceCapture();
+
+await sdk.open({
     config: {
-        is_front_camera: true,
-        camera_id: videoInputs[0].deviceId,
-        allow_multiple_faces: false,
-        max_camera_res: 1920,
-        time_to_blink: 1500,
+        // ── Camera ──────────────────────────────
+        is_front_camera:         true,
+        camera_id:               null,      // deviceId or index; null = auto
+        max_camera_res:          1920,
+
+        // ── Face checks ─────────────────────────
         min_face_detection_conf: 0.5,
-        face_area_thres: 0.3,
-        pitch_thresh: 15,
-        yaw_thresh: 15,
-        roll_thresh: 15,
-        blink_eye_frames: 2,
-        encrypt: false,
+        face_area_thres:         0.4,       // min face/oval area ratio
+        pitch_thresh:            15,        // degrees
+        yaw_thresh:              15,
+        roll_thresh:             10,
+
+        // ── Liveness journey ────────────────────
+        journey:                 "blink",   // "blink" | "head_turn" | "random"
+        time_to_blink:           2000,      // ms before challenge prompt
+        blink_eye_thresh:        0.2,
+        blink_eye_frames:        2,
+        blink_window_size:       30,
+        head_turn_thresh:        0.12,
+
+        // ── Face attribute detection (optional) ─
+        face_attr:               false,     // set true to enable
+        face_attr_precision:     "int8",    // "int8" (~12 MB) | "float" (~40 MB)
+        face_attr_threshold:     0.5,       // confidence cutoff
+        face_attr_interval_ms:   1000,      // inference every N ms
+
+        // ── Output ──────────────────────────────
+        jpeg_quality:            0.92,
+        encrypt:                 false,     // AES-256-GCM frame encryption
+        enc_key:                 null,      // PEM public key (required if encrypt=true)
+
+        // ── Advanced ────────────────────────────
+        assetBaseUrl:            null,      // override asset base URL
+        inferenceFps:            20,
+        session_timeout_ms:      0,         // 0 = no timeout
     },
     style: {
-        vis: true,
-        hole_height: 0.7,
-        hole_width: 0.7,
-        doc_color: 'white',
-        doc_opacity: 1.0,
-        face_color_success: 'rgba(0, 255, 0, 1)',
-        face_color_fail: '#ff0000',
-        font_size: null,
+        vis:                true,
+        hole_height:        0.55,
+        hole_width:         0.65,
+        doc_color:          "#FFFFFF",
+        doc_opacity:        0.72,
+        face_color_success: "#32CD32",
+        face_color_fail:    "#FF5733",
+        font_size:          null,           // auto
     },
-    onCaptureComplete: (results) => {
-        console.log(results);
-        const imgPrev = document.getElementById("preview");
-        imgPrev.src = results.best_frame;
-        imgPrev.style.display = "flex";
+    messages: {
+        // All keys are optional — only override what you need
+        FACE_MASK:   "Please remove your face mask",
+        SUNGLASSES:  "Please remove your sunglasses",
+        EYEGLASSES:  "Please remove your glasses",
+        EYES_CLOSED: "Please open your eyes",
+        HOLD_STILL:  "Hold still...",
+        BLINK_NOW:   "Blink now!",
+        LOOK_LEFT:   "Look left",
+        LOOK_RIGHT:  "Look right",
+    },
+    onCaptureComplete: (payload) => {
+        // payload.best_frame — base64 JPEG (or encrypted envelope if encrypt=true)
+        console.log(payload);
     },
     onError: (error) => {
-        console.log(error);
+        console.error(error);
     },
     onClose: () => {
-        console.log("Everything Shutdown...");
-    }
+        console.log("Session closed.");
+    },
 });
-
 ```
 
-<summary><h4><b>Shutdown Library</b></h4></summary>
+### Preload (optional)
 
-```bash
-# We can disengage camera and delete SDK from the UI by calling LiveFaceCapture.close() explicitly within the code. Returns a promise with result = [true, false]
+Call `preload()` before `open()` to warm up MediaPipe models in the background:
 
-LiveFaceCapture.close().then((result) => {
-    console.log("Shutdown Status:", result);
-})
+```js
+await sdk.preload(config);   // starts model download; resolves when ready
+await sdk.open({ ... });     // opens instantly — models already loaded
 ```
-</details>
 
+### Close
 
-<details open>
-<summary><h3><b>Library Configurations</b></h3></summary>
-All possible configuration has been given in the code block above. Following is the breif explaination for every parameter:
+```js
+const ok = await sdk.close();   // stops camera, terminates workers, removes DOM
+```
 
-<br>
-<h3>General Configurations</h3>
+---
 
-* <b>is_front_camera: </b>Specifies camera type (front/back) for the requested camera device. Only applicable if the system fails to identify itself. Default `true`.
+## Configuration Reference
 
-* <b>camera_id: </b>Specifies which camera to use based on the `deviceId`. camera_id can be any from the list of avaliable devices using `navigator.mediaDevices.enumerateDevices()` OR index of the list e.g. 0, "1" etc. If camera_id is not specified, the first camera available from the list will be initialized. Camera index `0` is used by default.
+### Camera
 
-* <b>allow_multiple_faces: </b>Determines if multiple faces are allowed in the captured photo. Default `false`.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `is_front_camera` | boolean | `true` | Hint for identifying front vs. back camera |
+| `camera_id` | string\|number\|null | `null` | `deviceId` or list index; `null` = first available |
+| `max_camera_res` | number | `1920` | Max camera resolution (width, pixels) |
 
-* <b>max_camera_res: </b>Limits the camera resolution for better performance. Default `1920`.
+### Face Checks
 
-* <b>time_to_blink: </b>The time in milliseconds between achieving a valid face position and prompting the user to blink. Default `1500 ms`.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `min_face_detection_conf` | number | `0.5` | MediaPipe detection confidence threshold |
+| `face_area_thres` | number | `0.4` | Min face-oval area ratio (move closer if below) |
+| `pitch_thresh` | number | `15` | Max allowed pitch angle (°) |
+| `yaw_thresh` | number | `15` | Max allowed yaw angle (°) |
+| `roll_thresh` | number | `10` | Max allowed roll angle (°) |
+| `allow_multiple_faces` | boolean | `false` | Allow more than one face in frame |
+| `max_number_faces` | number | `5` | Max faces tracked by MediaPipe |
 
-* <b>min_face_detection_conf: </b>The confidence threshold for Mediapipe Face Detection. Faces below this threshold are ignored. Default `0.5`.
+### Liveness Journey
 
-* <b>face_area_thres: </b>The minimum ratio between the face-oval area and the camera-hole area. If the ratio is below this value, the face is considered too far. Default `0.3` (face area should be atleast 30% of the hole area).
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `journey` | string | `"blink"` | `"blink"` · `"head_turn"` · `"random"` |
+| `time_to_blink` | number | `2000` | Milliseconds of stable hold before challenge prompt |
+| `blink_eye_thresh` | number | `0.2` | EAR threshold below which an eye is considered closed |
+| `blink_eye_frames` | number | `2` | Consecutive closed frames to register a blink |
+| `blink_window_size` | number | `30` | Frame window for blink detection |
+| `head_turn_thresh` | number | `0.12` | Normalised yaw delta required for a head-turn pass |
 
-* <b>pitch_thresh: </b>The valid range for the pitch angle (up-down tilt). Default `±15° (range: -15° to +15°)`.
+### Face Attribute Detection
 
-* <b>yaw_thresh: </b>The valid range for the yaw angle (side-to-side rotation). Default `±15° (range: -15° to +15°)`.
+Requires ONNX model files under `dist/models/` and ORT runtime under `dist/libs/onnxruntime-web/`. All paths are resolved automatically from `assetBaseUrl` — no manual URL configuration needed.
 
-* <b>roll_thresh: </b>The valid range for the roll angle (left-right tilt). Default `±15° (range: -15° to +15°)`.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `face_attr` | boolean | `false` | Enable occlusion detection (mask / glasses / eyes) |
+| `face_attr_precision` | string | `"int8"` | `"int8"` → w8a8 model (~12 MB) · `"float"` → fp32 (~40 MB) |
+| `face_attr_threshold` | number | `0.5` | Confidence cutoff for all attribute classes |
+| `face_attr_interval_ms` | number | `1000` | Inference cadence during HOLDING phase (ms) |
 
-* <b>blink_eye_frames: </b>The number of consecutive frames during which eyes must remain closed to register a blink. Default `2`.
+Detection priority (first match wins): **face\_mask → sunglasses → eyeglasses → eyes\_closed**
 
-* <b>encrypt: </b>Encrypted base64 of captured image will be returned in `onCaptureComplete` callback if specified. Default `false`.
+### Output & Encryption
 
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `jpeg_quality` | number | `0.92` | JPEG compression quality (0–1) |
+| `encrypt` | boolean | `false` | AES-256-GCM encrypt the captured frame |
+| `enc_key` | string\|null | `null` | PEM public key (required when `encrypt: true`) |
 
-<h3>Styling</h3>
+### Advanced
 
-* <b>vis: </b>Toggles visualization of 3D face landmarks and the face bounding box. Default true.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `assetBaseUrl` | string\|null | `null` | Override base URL for SDK assets (MediaPipe, models, workers). Defaults to SDK bundle location. |
+| `inferenceFps` | number | `20` | Cap landmark inference rate (frames/sec) |
+| `session_timeout_ms` | number | `0` | Auto-close after N ms of no capture. `0` = disabled. |
 
-* <b>hole_height: </b>Height of the camera-hole as a percentage of the camera view container. Default `0.7`.
+### Styling
 
-* <b>hole_width: </b>Width of the camera-hole as a percentage of its height. Default `0.7`.
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `vis` | boolean | `true` | Show landmark/bounding-box visualisation overlay |
+| `hole_height` | number | `0.55` | Oval height as fraction of viewport height |
+| `hole_width` | number | `0.65` | Oval width as fraction of oval height |
+| `doc_color` | string | `"#FFFFFF"` | Background colour outside the oval |
+| `doc_opacity` | number | `0.72` | Opacity of the background layer |
+| `face_color_success` | string | `"#32CD32"` | Oval border / message colour on pass |
+| `face_color_fail` | string | `"#FF5733"` | Oval border / message colour on fail |
+| `font_size` | number\|null | `null` | Message font size in px; `null` = auto |
 
-* <b>doc_color: </b>The background color of the camera view outside the camera-hole. Default `white`.
+### Callbacks
 
-* <b>doc_opacity: </b>Opacity of the background color outside the camera-hole. Default `1.0`.
+| Callback | Signature | Description |
+|---|---|---|
+| `onCaptureComplete` | `(payload) => void` | Fired on successful capture. `payload.best_frame` is a base64 JPEG (or encrypted envelope). |
+| `onError` | `(error) => void` | Fired on any internal error. |
+| `onClose` | `() => void` | Fired after the session closes following a successful capture. |
 
-* <b>face_color_success: </b> Color of the camera-hole border and message text when the face meets success criteria. Default `rgba(0, 255, 0, 1)`
+---
 
-* <b>face_color_faile: </b> Color of the camera-hole border and message text when the face fails the checks. Default `#ff0000`
-
-* <b>font_size: </b> Integer value specifying font size in pixels. System estimates the best size if font_size is not speicified or null. Default `null`
-
-
-<h3>Callbacks</h3>
-
-* <b>onCaptureComplete: </b>Triggered when a successful capture is completed. Returns a results object containing: base64_string of the captured image and, face bounding box information.
-
-* <b>onError: </b>Triggered when an internal error occurs. Receives an error message as a parameter.
-
-* <b>onClose: </b>Triggered after a successful capture, releasing the camera and memory. The library must be re-initialized after this callback.
-
-</details>
-
-## <div>Author</div>
+## Author
 
 Muhammad Nouman Ahsan
 
-## <div>References</div>
+## References
 
-1. Mediapipe https://google.github.io/mediapipe/
-2. Mediapipe Github https://github.com/google/mediapipe
-3. In-plane face orientation estimation in still images https://hal.archives-ouvertes.fr/hal-01169835/
-4. Real-Time Eye Blink Detection using Facial Landmarks https://vision.fe.uni-lj.si/cvww2016/proceedings/papers/05.pdf
-
+1. [MediaPipe](https://google.github.io/mediapipe/)
+2. [MediaPipe GitHub](https://github.com/google/mediapipe)
+3. [In-plane face orientation estimation](https://hal.archives-ouvertes.fr/hal-01169835/)
+4. [Real-Time Eye Blink Detection using Facial Landmarks](https://vision.fe.uni-lj.si/cvww2016/proceedings/papers/05.pdf)
