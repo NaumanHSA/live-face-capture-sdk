@@ -128,12 +128,12 @@
           <div class="result-title" id="result_title"></div>
           <div class="result-detail" id="result_detail"></div>
         </div>
-      </div>
-    </div>
 
-    <div id="preview-container" class="mt-5 card" style="display:none; max-height:100vh; width:100%;">
-      <img id="preview" style="object-fit: contain; width: 100%" />
-      <button id="back" class="btn btn-secondary mt-3">Back</button>
+        <!-- Captured image — only shown when encryption is off -->
+        <div id="preview-container" style="display:none; margin-top:1.25rem;">
+          <img id="preview" style="width:100%; max-width:320px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15);" />
+        </div>
+      </div>
     </div>
   </div>
 
@@ -217,8 +217,13 @@
     }
 
     // ── Start button ──────────────────────────────────────────────────────────
+    const previewContainer = document.getElementById("preview-container");
+    const previewImg       = document.getElementById("preview");
+
     btnStart.addEventListener("click", () => {
-      resultBox.style.display = "none";
+      resultBox.style.display        = "none";
+      previewContainer.style.display = "none";
+      previewImg.src                 = "";
 
       const journey = document.querySelector('input[name="journey"]:checked').value;
 
@@ -255,10 +260,9 @@
           const frame = results?.best_frame;
 
           if (!PUBLIC_KEY_PEM) {
-            // ── No encryption — show the captured image directly ──────────────
-            document.getElementById("preview").src = frame;
-            document.getElementById("preview-container").style.display = "block";
-            document.getElementById("main").style.display = "none";
+            // ── No encryption — show the captured image inline ────────────────
+            previewImg.src                 = frame;
+            previewContainer.style.display = "block";
           } else {
             // ── Send encrypted token to liveness server ───────────────────────
             setServerStatus("busy", "Sending to liveness server…");
@@ -297,10 +301,6 @@
       });
     });
 
-    document.getElementById("back").addEventListener("click", () => {
-      document.getElementById("preview-container").style.display = "none";
-      document.getElementById("main").style.display = "block";
-    });
   </script>
 </body>
 </html>
