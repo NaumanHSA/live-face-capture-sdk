@@ -171,11 +171,14 @@ export function createLivenessLoop(ctx) {
                     }
                 }
 
-                // Face attribute check — only while in HOLDING (strict) phase.
-                // Blocks journey advancement until the occlusion is removed.
-                if (strict && faceAttrChecker) {
+                // Face attribute check — runs in ALL phases so occlusions can't
+                // be sneaked through during the blink/head-turn challenge.
+                // During the challenge phase (strict=false) we skip eyes_closed
+                // to avoid false positives while the user is mid-blink.
+                if (faceAttrChecker) {
                     const attrLabel = faceAttrChecker.check(videoElement, face.landmarks, now);
-                    if (attrLabel) {
+                    const blocks = attrLabel && (strict || attrLabel !== "eyes_closed");
+                    if (blocks) {
                         const msg  = labelToMessage(attrLabel, config.messages);
                         const anim = LABEL_ANIM[attrLabel];
                         hole = drawHole(root, videoElement, config, config.FACE_COLOR_FAIL, msg, anim, now);
