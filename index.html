@@ -253,19 +253,14 @@
         onCaptureComplete: async (results) => {
           console.log("Capture complete:", results);
           const frame = results?.best_frame;
-          const imgPrev = document.getElementById("preview");
 
           if (!PUBLIC_KEY_PEM) {
-            // ── Server was offline — no encryption, skip liveness check ─────────
-            console.warn("Liveness server offline — showing raw frame, no liveness check.");
-            imgPrev.src = frame;
-            resultBox.style.display = "block";
-            resultBox.className     = "result-box";
-            resultTitle.textContent = "⚠ Liveness server offline";
-            resultDetail.textContent = "Capture succeeded. Liveness check skipped — server unreachable.";
+            // ── No encryption — show the captured image directly ──────────────
+            document.getElementById("preview").src = frame;
+            document.getElementById("preview-container").style.display = "block";
+            document.getElementById("main").style.display = "none";
           } else {
             // ── Send encrypted token to liveness server ───────────────────────
-            imgPrev.src = "";   // frame is encrypted; no local preview
             setServerStatus("busy", "Sending to liveness server…");
             try {
               const res = await fetch(`${SERVER}/api/Liveness/LivenessCheck`, {
@@ -292,9 +287,6 @@
               resultDetail.textContent = err.message;
             }
           }
-
-          // document.getElementById("preview-container").style.display = "flex";
-          // document.getElementById("main").style.display = "none";
         },
 
         onError: (err) => {
@@ -307,7 +299,7 @@
 
     document.getElementById("back").addEventListener("click", () => {
       document.getElementById("preview-container").style.display = "none";
-      document.getElementById("main").style.display = "flex";
+      document.getElementById("main").style.display = "block";
     });
   </script>
 </body>
