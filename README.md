@@ -1,15 +1,37 @@
-<div>
-<h1>Live Face Capture SDK</h1>
-<br>
-
 <div align="center">
-  <img width="40%" src="./assets/demo.gif">
+  <img src="./assets/live-face-capture-sdk.png" alt="Live Face Capture SDK" width="100%">
 </div>
 
-<h2>Overview</h2>
+<p align="center">
+  <img src="https://img.shields.io/badge/version-4.1.0-blue" alt="version">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <img src="https://img.shields.io/badge/runs-100%25%20in%20browser-orange" alt="browser">
+  <img src="https://img.shields.io/badge/dependencies-MediaPipe%20%2B%20ONNX%20Runtime%20Web-lightgrey" alt="deps">
+</p>
+
+## Overview
+
 A JavaScript SDK for capturing high-quality, liveness-verified facial images in the browser. Built on MediaPipe Face Mesh, it enforces correct face alignment (pitch, yaw, roll), confirms subject presence through liveness challenges, detects face occlusions in real time, and returns an encrypted or plain JPEG frame ready for downstream processing.
 
-</div>
+Everything runs client-side — camera frames never leave the device unless you explicitly opt into the liveness server integration.
+
+### Pipeline
+
+```
+Camera → Face Mesh → Alignment → Liveness → Occlusion Check → Capture → Encryption
+getUserMedia   468 3D      pitch/yaw/roll   blink or       mask · sunglasses   best      AES-256-GCM
+               landmarks                    head turn      glasses · eyes      frame     (optional)
+```
+
+| Stage | What it does |
+|---|---|
+| **Camera** | Opens the selected device via `getUserMedia` at up to `max_camera_res` |
+| **Face Mesh** | MediaPipe returns 468 3D landmarks per frame, capped at `inferenceFps` |
+| **Alignment** | Rejects frames outside `pitch_thresh` / `yaw_thresh` / `roll_thresh`, and faces too small or outside the oval |
+| **Liveness** | Runs the configured journey — `blink`, `head_turn`, or `random` |
+| **Occlusion Check** | ONNX Runtime Web worker flags mask / sunglasses / eyeglasses / closed eyes |
+| **Capture** | Extracts the best frame as a JPEG at `jpeg_quality` |
+| **Encryption** | Optionally AES-256-GCM encrypts the frame before it reaches `onCaptureComplete` |
 
 ---
 
@@ -45,6 +67,14 @@ Built on **MediaPipe Face Mesh** — 468 3D facial landmarks used for orientatio
 - **Face Position** — Detects if the face drifts outside the oval
 - **Visualization** — Live landmark overlay and bounding box on a canvas
 - **Encryption** — Optional AES-256-GCM frame encryption
+
+---
+
+## Requirements
+
+- A browser with `getUserMedia`, Web Workers and WebAssembly — Chrome/Edge 90+, Firefox 90+, Safari 15+
+- A **secure context**: the page must be served over HTTPS or from `localhost`, otherwise the camera cannot be opened
+- Node 18+ to build from source
 
 ---
 
@@ -165,6 +195,46 @@ const ok = await sdk.close();   // stops camera, terminates workers, removes DOM
 
 ---
 
+## Running the Demo
+
+`index.html` is a full demo page wired to the built bundle. Serve it over a secure context:
+
+```bash
+npm run build
+npx serve .            # then open http://localhost:3000
+```
+
+Or build the containerised demo (nginx on port 80):
+
+```bash
+docker build -t live-face-capture .
+docker run -p 8080:80 live-face-capture
+```
+
+### Optional liveness server
+
+`server/` contains a FastAPI reference backend that hands out an RSA-2048 public key and accepts encrypted frames for scoring. The SDK degrades gracefully when it is offline.
+
+```bash
+pip install -r server/requirements.txt
+uvicorn main:app --reload --port 8000     # run from server/
+```
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/key` | RSA-2048 public key PEM — feed into `enc_key` |
+| `POST /api/v1/liveness` | Decrypts the token and returns a liveness result |
+
+---
+
+## Tests
+
+```bash
+npm test        # vitest — blink, head-turn, geometry, config merge, crypto envelope
+```
+
+---
+
 ## Configuration Reference
 
 ### Camera
@@ -253,6 +323,10 @@ Detection priority (first match wins): **face\_mask → sunglasses → eyeglasse
 ## Author
 
 Muhammad Nouman Ahsan
+
+## License
+
+MIT
 
 ## References
 
